@@ -22,7 +22,6 @@
             --texto: #f1f5f9;
             --texto-suave: #94a3b8;
             --primaria: #10B981;
-            --primaria-escura: #059669;
             --secundaria: #3b82f6;
             --perigo: #ef4444;
             --aviso: #f59e0b;
@@ -45,7 +44,6 @@
         .btn { padding: 12px 20px; border-radius: 8px; border: none; font-size: 15px; cursor: pointer; }
         .btn-primario { background: var(--primaria); color: white; width: 100%; }
         .btn-perigo { background: var(--perigo); color: white; }
-        .btn-sucesso { background: var(--sucesso); color: white; }
         .btn-pequeno { padding: 6px 12px; font-size: 13px; }
         .cabecalho { text-align: center; padding: 20px 0; margin-bottom: 25px; border-bottom: 1px solid var(--borda); }
         .cabecalho h1 { font-size: 24px; color: var(--primaria); }
@@ -71,10 +69,11 @@
         .ensaiada { background: var(--sucesso); color: white; }
         .nao-ensaiada { background: var(--perigo); color: white; }
         .btn-whatsapp { background: #25d366; color: white; }
-        .escala-grade { display: grid; gap: 10px; }
-        .escala-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--fundo); border-radius: 8px; border: 1px solid var(--borda); }
-        .escala-instrumento { font-weight: 500; display: flex; align-items: center; gap: 8px; }
-        .escala-pessoa { color: var(--texto-suave); font-size: 14px; }
+        .escala-grade { display: grid; gap: 12px; }
+        .escala-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--fundo); border-radius: 8px; border: 1px solid var(--borda); flex-wrap: wrap; gap: 8px; }
+        .escala-instrumento { font-weight: 500; display: flex; align-items: center; gap: 8px; min-width: 110px; }
+        .escala-input-name { flex: 1; min-width: 140px; margin: 0 8px; }
+        .escala-input-name input { width: 100%; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--borda); background: var(--fundo-card); color: var(--texto); text-align: center; }
         .escala-status { display: flex; gap: 6px; }
         .oculto { display: none !important; }
         .sem-dados { text-align: center; padding: 30px; color: var(--texto-suave); font-style: italic; }
@@ -85,6 +84,8 @@
         @media (max-width: 600px) {
             .linha-form { flex-direction: column; }
             .sair-btn { position: static; margin-bottom: 15px; width: 100%; }
+            .escala-item { flex-direction: column; align-items: stretch; }
+            .escala-input-name { margin: 8px 0; }
         }
     </style>
 </head>
@@ -92,18 +93,18 @@
     <div id="tela-login" class="login-tela">
         <div class="login-container">
             <div class="login-logo">🎵</div>
-            <h2>Ministério de Louvor</h2>
-            <p>Map Music</p>
+            <h2>Map Music</h2>
+            <p>Ministério de Louvor — Acesso ao Sistema</p>
             <div id="mensagem-login" class="mensagem"></div>
             <div class="input-group">
-                <label>Usuário</label>
-                <input type="text" id="usuario" placeholder="Digite seu usuário">
+                <label>Digite seu nome ou usuário</label>
+                <input type="text" id="usuario" placeholder="Seu usuário">
             </div>
             <div class="input-group">
-                <label>Senha</label>
-                <input type="password" id="senha" placeholder="Digite sua senha">
+                <label>Digite sua senha</label>
+                <input type="password" id="senha" placeholder="Sua senha">
             </div>
-            <button id="btn-entrar" class="btn btn-primario">Entrar</button>
+            <button id="btn-entrar" class="btn btn-primario">Entrar no Sistema</button>
         </div>
     </div>
     <div id="tela-principal" class="tela">
@@ -135,7 +136,88 @@
             </div>
             <div class="card">
                 <h3>🎹 Montar Escala</h3>
-                <div class="escala-grade" id="escala-corpo"></div>
+                <div class="escala-grade" id="escala-corpo">
+                    <!-- Ministro -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">🎤 Ministro</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-ministro" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-ministro" onclick="trocarStatus('ministro')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                    <!-- Back Vocal -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">🎤 Back Vocal</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-backvocal" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-backvocal" onclick="trocarStatus('backvocal')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                    <!-- Teclado -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">🎹 Teclado</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-teclado" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-teclado" onclick="trocarStatus('teclado')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                    <!-- Guitarra -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">🎸 Guitarra</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-guitarra" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-guitarra" onclick="trocarStatus('guitarra')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                    <!-- Violão -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">🎸 Violão</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-violao" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-violao" onclick="trocarStatus('violao')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                    <!-- Contrabaixo -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">🎻 Contrabaixo</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-contrabaixo" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-contrabaixo" onclick="trocarStatus('contrabaixo')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                    <!-- Bateria -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">🥁 Bateria</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-bateria" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-bateria" onclick="trocarStatus('bateria')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                    <!-- Líder -->
+                    <div class="escala-item">
+                        <div class="escala-instrumento">👤 Líder</div>
+                        <div class="escala-input-name">
+                            <input type="text" id="escala-input-lider" placeholder="Digite o nome...">
+                        </div>
+                        <div class="escala-status">
+                            <button class="btn status-btn status-pendente" id="status-btn-lider" onclick="trocarStatus('lider')">⏳ Pendente</button>
+                        </div>
+                    </div>
+                </div>
                 <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="btn btn-primario" onclick="salvarEscala()">💾 Salvar Escala</button>
                     <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">📱 Enviar WhatsApp</button>
@@ -203,7 +285,16 @@
     <script>
         let usuarioLogado = null;
         let nivelUsuario = null;
-        window.escalaAtual = {};
+        window.statusEscala = {
+            ministro: 'pendente',
+            backvocal: 'pendente',
+            teclado: 'pendente',
+            guitarra: 'pendente',
+            violao: 'pendente',
+            contrabaixo: 'pendente',
+            bateria: 'pendente',
+            lider: 'pendente'
+        };
 
         const cargos = [
             {chave: 'ministro', nome: 'Ministro', icone: '🎤'},
@@ -259,41 +350,51 @@
             if (nome === 'repertorio') carregarRepertorio();
         }
 
-        function montarLinhaInstrumento(cargo, valor, status) {
-            return `
-                <div class="escala-item">
-                    <div class="escala-instrumento">${cargo.icone} ${cargo.nome}</div>
-                    <div class="escala-pessoa" id="escala-valor-${cargo.chave}">${valor || '—'}</div>
-                    <div class="escala-status">
-                        <button class="btn status-btn status-${status}" onclick="trocarStatus('${cargo.chave}')">
-                            ${status === 'confirmado' ? '✅ Disponível' : status === 'recusado' ? '❌ Indisponível' : '⏳ Pendente'}
-                        </button>
-                    </div>
-                </div>
-            `;
+        function trocarStatus(cargo) {
+            const atual = window.statusEscala[cargo];
+            let novo, texto;
+            if (atual === 'pendente') {
+                novo = 'confirmado';
+                texto = '✅ Disponível';
+            } else if (atual === 'confirmado') {
+                novo = 'recusado';
+                texto = '❌ Indisponível';
+            } else {
+                novo = 'pendente';
+                texto = '⏳ Pendente';
+            }
+            window.statusEscala[cargo] = novo;
+            
+            const btn = document.getElementById(`status-btn-${cargo}`);
+            btn.className = '';
+            btn.classList.add('btn', 'status-btn', `status-${novo}`);
+            btn.textContent = texto;
         }
 
         async function carregarEscala() {
             const res = await fetch('/api/escala');
             const esc = await res.json();
+            
             document.getElementById('escala-data').value = esc.dataExibicao || '';
             document.getElementById('escala-local').value = esc.local || '';
             
-            let html = '';
             cargos.forEach(c => {
+                const input = document.getElementById(`escala-input-${c.chave}`);
+                if (input) input.value = esc[c.chave] || '';
+                
                 const statusKey = 'status' + c.chave.charAt(0).toUpperCase() + c.chave.slice(1);
-                html += montarLinhaInstrumento(c, esc[c.chave], esc[statusKey] || 'pendente');
+                const status = esc[statusKey] || 'pendente';
+                window.statusEscala[c.chave] = status;
+                
+                const btn = document.getElementById(`status-btn-${c.chave}`);
+                if (btn) {
+                    btn.className = '';
+                    btn.classList.add('btn', 'status-btn', `status-${status}`);
+                    if (status === 'confirmado') btn.textContent = '✅ Disponível';
+                    else if (status === 'recusado') btn.textContent = '❌ Indisponível';
+                    else btn.textContent = '⏳ Pendente';
+                }
             });
-            document.getElementById('escala-corpo').innerHTML = html;
-            window.escalaAtual = esc;
-        }
-
-        function trocarStatus(chave) {
-            const statusKey = 'status' + chave.charAt(0).toUpperCase() + chave.slice(1);
-            const atual = window.escalaAtual[statusKey] || 'pendente';
-            let novo = atual === 'pendente' ? 'confirmado' : atual === 'confirmado' ? 'recusado' : 'pendente';
-            window.escalaAtual[statusKey] = novo;
-            carregarEscala();
         }
 
         async function salvarEscala() {
@@ -301,24 +402,24 @@
             const local = document.getElementById('escala-local').value;
             
             const escala = {
-                dataExibicao: data, local: local,
-                ministro: document.getElementById('escala-valor-ministro')?.textContent.trim() || '',
-                backvocal: document.getElementById('escala-valor-backvocal')?.textContent.trim() || '',
-                teclado: document.getElementById('escala-valor-teclado')?.textContent.trim() || '',
-                guitarra: document.getElementById('escala-valor-guitarra')?.textContent.trim() || '',
-                violao: document.getElementById('escala-valor-violao')?.textContent.trim() || '',
-                contrabaixo: document.getElementById('escala-valor-contrabaixo')?.textContent.trim() || '',
-                bateria: document.getElementById('escala-valor-bateria')?.textContent.trim() || '',
-                lider: document.getElementById('escala-valor-lider')?.textContent.trim() || '',
-                repertorio: window.escalaAtual?.repertorio || [],
-                statusTeclado: window.escalaAtual?.statusTeclado || 'pendente',
-                statusGuitarra: window.escalaAtual?.statusGuitarra || 'pendente',
-                statusContrabaixo: window.escalaAtual?.statusContrabaixo || 'pendente',
-                statusViolao: window.escalaAtual?.statusViolao || 'pendente',
-                statusBateria: window.escalaAtual?.statusBateria || 'pendente',
-                statusMinistro: window.escalaAtual?.statusMinistro || 'pendente',
-                statusBackvocal: window.escalaAtual?.statusBackvocal || 'pendente',
-                statusLider: window.escalaAtual?.statusLider || 'pendente'
+                dataExibicao: data,
+                local: local,
+                ministro: document.getElementById('escala-input-ministro')?.value || '',
+                backvocal: document.getElementById('escala-input-backvocal')?.value || '',
+                teclado: document.getElementById('escala-input-teclado')?.value || '',
+                guitarra: document.getElementById('escala-input-guitarra')?.value || '',
+                violao: document.getElementById('escala-input-violao')?.value || '',
+                contrabaixo: document.getElementById('escala-input-contrabaixo')?.value || '',
+                bateria: document.getElementById('escala-input-bateria')?.value || '',
+                lider: document.getElementById('escala-input-lider')?.value || '',
+                statusMinistro: window.statusEscala.ministro,
+                statusBackvocal: window.statusEscala.backvocal,
+                statusTeclado: window.statusEscala.teclado,
+                statusGuitarra: window.statusEscala.guitarra,
+                statusViolao: window.statusEscala.violao,
+                statusContrabaixo: window.statusEscala.contrabaixo,
+                statusBateria: window.statusEscala.bateria,
+                statusLider: window.statusEscala.lider
             };
 
             try {
@@ -339,11 +440,30 @@
             const data = document.getElementById('escala-data').value || '---';
             const local = document.getElementById('escala-local').value || '---';
             let texto = `📋 ESCALA - Ministério de Louvor\n📅 Data: ${data}\n📍 Local: ${local}\n\n`;
+            
+            const nomes = {
+                ministro: document.getElementById('escala-input-ministro')?.value || '',
+                backvocal: document.getElementById('escala-input-backvocal')?.value || '',
+                teclado: document.getElementById('escala-input-teclado')?.value || '',
+                guitarra: document.getElementById('escala-input-guitarra')?.value || '',
+                violao: document.getElementById('escala-input-violao')?.value || '',
+                contrabaixo: document.getElementById('escala-input-contrabaixo')?.value || '',
+                bateria: document.getElementById('escala-input-bateria')?.value || '',
+                lider: document.getElementById('escala-input-lider')?.value || ''
+            };
+            
             cargos.forEach(c => {
-                const nome = document.getElementById(`escala-valor-${c.chave}`)?.textContent.trim() || '—';
-                texto += `${c.icone} ${c.nome}: ${nome}\n`;
+                const nome = nomes[c.chave] || '—';
+                const status = window.statusEscala[c.chave];
+                let statusTexto = '';
+                if (status === 'confirmado') statusTexto = '✅ Disponível';
+                else if (status === 'recusado') statusTexto = '❌ Indisponível';
+                else statusTexto = '⏳ Pendente';
+                texto += `${c.icone} ${c.nome}: ${nome} — ${statusTexto}\n`;
             });
-            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+            
+            const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+            window.open(link, '_blank');
         }
         async function carregarEquipe() {
             const res = await fetch('/api/equipe');
@@ -355,8 +475,13 @@
             }
             lista.innerHTML = membros.map(m => `
                 <li class="item">
-                    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.funcao}</div></div>
-                    <div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="excluirMembro(${m.id})">🗑️</button></div>
+                    <div>
+                        <div class="item-nome">${m.nome}</div>
+                        <div class="item-info">${m.funcao}</div>
+                    </div>
+                    <div class="acoes">
+                        <button class="btn btn-perigo btn-pequeno" onclick="excluirMembro(${m.id})">🗑️</button>
+                    </div>
                 </li>
             `).join('');
         }
@@ -392,7 +517,7 @@
                 <li class="item">
                     <div>
                         <div class="item-nome">${m.nome}</div>
-                        <div class="item-info">${m.link ? `<a href="${m.link}" target="_blank">🔗 Abrir link</a>` : 'Sem link'}</div>
+                        <div class="item-info">${m.link ? `<a href="${m.link}" target="_blank">🔗 Abrir no YouTube</a>` : 'Sem link'}</div>
                     </div>
                     <div class="acoes">
                         <button class="btn status-btn ${m.ensaiada ? 'ensaiada' : 'nao-ensaiada'}" 
@@ -445,10 +570,11 @@
             if (btnEntrar) {
                 btnEntrar.addEventListener('click', fazerLogin);
             }
-            document.addEventListener('keypress', function(e) {
+            document.getElementById('senha').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') fazerLogin();
             });
         });
     </script>
 </body>
 </html>
+
