@@ -429,14 +429,14 @@
                     body: JSON.stringify(escala)
                 });
                 await res.json();
-                alert('✅ Escala salva com sucesso!');
+                alert('✅ Escala salva com sucesso! Agora pode enviar pelo WhatsApp');
                 carregarEscala();
             } catch (erro) {
                 alert('❌ Erro ao salvar: ' + erro.message);
             }
         }
 
-        function enviarWhatsApp() {
+        async function enviarWhatsApp() {
             const data = document.getElementById('escala-data').value || '---';
             const local = document.getElementById('escala-local').value || '---';
             let texto = `📋 ESCALA - Ministério de Louvor\n📅 Data: ${data}\n📍 Local: ${local}\n\n`;
@@ -452,6 +452,7 @@
                 lider: document.getElementById('escala-input-lider')?.value || ''
             };
             
+            texto += `👥 EQUIPE:\n`;
             cargos.forEach(c => {
                 const nome = nomes[c.chave] || '—';
                 const status = window.statusEscala[c.chave];
@@ -461,6 +462,22 @@
                 else statusTexto = '⏳ Pendente';
                 texto += `${c.icone} ${c.nome}: ${nome} — ${statusTexto}\n`;
             });
+
+            // Busca e adiciona as músicas do repertório
+            try {
+                const resMusicas = await fetch('/api/repertorio');
+                const musicas = await resMusicas.json();
+                if (musicas.length > 0) {
+                    texto += `\n🎶 MÚSICAS / MATERIAIS:\n`;
+                    musicas.forEach(m => {
+                        texto += `🎵 ${m.nome}`;
+                        if (m.link) texto += `\n🔗 ${m.link}`;
+                        texto += `\n${m.ensaiada ? '✅ Ensaiada' : '❌ Não Ensaiada'}\n\n`;
+                    });
+                }
+            } catch (e) {
+                // Se não conseguir carregar músicas, envia só a escala mesmo
+            }
             
             const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
             window.open(link, '_blank');
@@ -577,4 +594,9 @@
     </script>
 </body>
 </html>
+
+
+
+
+
 
