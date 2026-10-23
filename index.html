@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Music — Ministério do Louvor</title>
+    <meta name="theme-color" content="#10B981">
+    
+    <link rel="manifest" href="manifest.json">
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(registro => console.log('✅ Service Worker registrado!', registro))
+          .catch(erro => console.log('❌ Erro no Service Worker:', erro));
+      });
+    }
+    </script>
+    
+    <style>
+        :root {
+            --fundo: #0F1419;
+            --fundo-card: #1A2332;
+            --destaque: #10B981;
+            --destaque-claro: #34D399;
+            --texto: #E8EEF2;
+            --texto-suave: #94A3B8;
+            --borda: #2A3B4C;
+            --raio: 12px;
+            --disponivel: #10B981;
+            --indisponivel: #EF4444;
+            --pendente: #F59E0B;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: linear-gradient(135deg, #0F1419, #1A2332); min-height: 100vh; color: var(--texto); line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 20px; margin-bottom: 20px; }
+        header h1 { font-size: 1.8rem; color: var(--destaque-claro); }
+        
+        .navegacao {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            background: rgba(26, 35, 50, 0.8); padding: 10px; border-radius: var(--raio);
+            margin-bottom: 20px; border: 1px solid var(--borda);
+        }
+        .aba {
+            flex: 1; min-width: 80px; padding: 10px; text-align: center;
+            cursor: pointer; font-weight: 600; color: var(--texto-suave);
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .aba:hover:not(.ativa) { background: rgba(16, 185, 129, 0.1); color: var(--texto); }
+        .aba.ativa { background: var(--destaque); color: white; }
+        .aba.oculta { display: none !important; }
+        
+        .conteudo-aba { display: none; }
+        .conteudo-aba.ativa { display: block; }
+        
+        .cartao {
+            background: var(--fundo-card); border-radius: var(--raio); padding: 25px;
+            margin-bottom: 20px; border: 1px solid var(--borda);
+        }
+        .cartao-titulo {
+            font-size: 1.1rem; font-weight: 700; color: var(--destaque-claro);
+            margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--borda);
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+        }
+        .linha-funcao {
+            display: flex; justify-content: space-between; padding: 12px 10px;
+            border-bottom: 1px solid var(--borda); align-items: center; flex-wrap: wrap; gap: 8px;
+        }
+        .nome-funcao { font-weight: 600; min-width: 120px; }
+        .valor-nome { color: var(--destaque-claro); flex: 1; }
+        
+        .status-presenca {
+            display: flex; gap: 6px;
+        }
+        .btn-presenca {
+            padding: 6px 12px; border-radius: 20px; border: none;
+            font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;
+        }
+        .btn-disponivel { background: rgba(16, 185, 129, 0.2); color: var(--disponivel); border: 1px solid var(--disponivel); }
+        .btn-indisponivel { background: rgba(239, 68, 68, 0.2); color: var(--indisponivel); border: 1px solid var(--indisponivel); }
+        .btn-pendente { background: rgba(245, 158, 11, 0.2); color: var(--pendente); border: 1px solid var(--pendente); }
+        .btn-presenca.selecionado { transform: scale(1.05); box-shadow: 0 0 0 2px currentColor; }
+        
+        .item-musica-repertorio {
+            padding: 14px; background: rgba(42, 59, 76, 0.4); border-radius: 8px;
+            margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px;
+            align-items: center; transition: all 0.2s;
+        }
+        .item-musica-repertorio:hover { background: rgba(42, 59, 76, 0.6); }
+        
+        .musica-nome { flex: 1; min-width: 150px; font-weight: 600; }
+        .musica-link { color: var(--destaque-claro); text-decoration: none; font-size: 0.9rem; min-width: 120px; }
+        .musica-link:hover { text-decoration: underline; }
+        
+        .status-btn {
+            padding: 6px 12px; border-radius: 20px; border: none; font-weight: 600;
+            cursor: pointer; font-size: 0.85rem; transition: all 0.2s; min-width: 110px;
+        }
+        .status-btn.ensaiada { background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid #10B981; }
+        .status-btn.nao-ensaiada { background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid #EF4444; }
+        .status-btn:hover { transform: scale(1.05); }
+        
+        button { padding: 10px 15px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-principal { background: var(--destaque); color: white; }
+        .btn-principal:hover { opacity: 0.9; }
+        .btn-secundario { background: transparent; color: var(--texto); border: 1px solid var(--borda); }
+        .btn-pequeno { padding: 6px 12px; font-size: 0.9rem; }
+        .btn-remover { background: #EF4444; color: white; }
+        
+        .btn-whats {
+            background: #25D366; color: white; display: inline-block;
+            text-decoration: none; text-align: center; width: 100%;
+        }
+        
+        input, textarea {
+            padding: 10px 12px; border-radius: 6px; border: 1px solid var(--borda);
+            background: rgba(15, 20, 25, 0.6); color: var(--texto);
+            margin: 5px 0; width: 100%; font-size: 1rem;
+        }
+        textarea { min-height: 80px; resize: vertical; }
+        input:focus, textarea:focus { outline: none; border-color: var(--destaque); }
+        
+        .grade-equipe { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+        .cartao-membro { background: rgba(42, 59, 76, 0.4); border-radius: 8px; padding: 15px; text-align: center; }
+        .cartao-membro .nome { font-weight: 700; color: var(--destaque-claro); margin-bottom: 5px; }
+        .cartao-membro .funcao { font-size: 0.9rem; color: var(--texto-suave); }
+        
+        .tela-login { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .caixa-login {
+            background: var(--fundo-card); border: 1px solid var(--borda); padding: 30px;
+            border-radius: var(--raio); width: 100%; max-width: 380px; text-align: center;
+        }
+        .caixa-login h2 { color: var(--destaque-claro); margin-bottom: 20px; }
+        
+        .oculto { display: none !important; }
+        .vazio { text-align: center; color: var(--texto-suave); padding: 30px; font-style: italic; }
+        
+        @media (max-width: 600px) {
+            .linha-funcao { flex-direction: column; gap: 8px; align-items: stretch; }
+            .status-presenca { justify-content: center; }
+            .item-musica-repertorio { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div id="telaLogin" class="tela-login">
+        <div class="caixa-login">
+            <h2>🎵 Map Music</h2>
+            <p style="margin-bottom: 20px;">Ministério do Louvor — Acesso ao Sistema</p>
+            <input type="text" id="usuario" placeholder="Digite seu nome ou usuário">
+            <input type="password" id="senha" placeholder="Digite sua senha">
+            <button class="btn-principal" onclick="entrar()">Entrar no Sistema</button>
+        </div>
+    </div>
+    <div id="conteudo" class="container oculto">
+        <header>
+            <h1>🎵 Map Music</h1>
+            <p id="saudacao"></p>
+        </header>
+        <nav class="navegacao">
+            <div class="aba ativa" onclick="mostrarAba('escala')">📅 Escala</div>
+            <div class="aba" onclick="mostrarAba('equipe')">👥 Equipe</div>
+            <div class="aba" onclick="mostrarAba('materiais')">📂 Materiais</div>
+            <div class="aba oculta" id="abaAdmin" onclick="mostrarAba('admin')">⚙️ Admin</div>
+        </nav>
+        <div id="escala" class="conteudo-aba ativa">
+            <div class="cartao">
+                <div class="cartao-titulo" id="dataEscala">📅 Nenhuma escala salva ainda</div>
+                <p style="color: var(--texto-suave); margin-bottom: 20px;" id="localEscala">📍 —</p>
+                
+                <div class="linha-funcao">
+                    <span class="nome-funcao">🎹 Teclado</span>
+                    <span class="valor-nome" id="valTeclado">—</span>
+                    <div class="status-presenca" id="presencaTeclado"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">🎸 Guitarra</span>
+                    <span class="valor-nome" id="valGuitarra">—</span>
+                    <div class="status-presenca" id="presencaGuitarra"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">🎻 Contrabaixo</span>
+                    <span class="valor-nome" id="valBaixo">—</span>
+                    <div class="status-presenca" id="presencaBaixo"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">🎸 Violão</span>
+                    <span class="valor-nome" id="valViolao">—</span>
+                    <div class="status-presenca" id="presencaViolao"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">🥁 Bateria</span>
+                    <span class="valor-nome" id="valBateria">—</span>
+                    <div class="status-presenca" id="presencaBateria"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">🎤 Ministro</span>
+                    <span class="valor-nome" id="valMinistro">—</span>
+                    <div class="status-presenca" id="presencaMinistro"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">🎤 Back Vocal</span>
+                    <span class="valor-nome" id="valBackVocal">—</span>
+                    <div class="status-presenca" id="presencaBackVocal"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">👑 Líder do Dia</span>
+                    <span class="valor-nome" id="valLider">—</span>
+                    <div class="status-presenca" id="presencaLider"></div>
+                </div>
+                <div class="linha-funcao">
+                    <span class="nome-funcao">✝️ Ministros</span>
+                    <span class="valor-nome" id="valMinistros">—</span>
+                    <div class="status-presenca" id="presencaMinistros"></div>
+                </div>
+                
+                <h3 style="margin: 25px 0 15px; display: flex; justify-content: space-between; align-items: center;">
+                    🎶 Repertório do Culto
+                    <button class="btn-principal btn-pequeno" onclick="adicionarMusicaEscala()">➕ Adicionar</button>
+                </h3>
+                <div id="listaRepertorioEscala"></div>
+                <p id="repertorioEscalaVazio" class="vazio">Nenhuma música adicionada ainda</p>
+                
+                <div style="margin-top: 25px;">
+                    <a id="linkWhatsApp" class="btn-whats" href="#" target="_blank">
+                        💬 Enviar Escala pelo WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div id="equipe" class="conteudo-aba">
+            <div class="cartao">
+                <div class="cartao-titulo">
+                    👥 Equipe
+                    <button class="btn-principal btn-pequeno" onclick="adicionarMembro()">➕ Adicionar Membro</button>
+                </div>
+                <div id="listaEquipe" class="grade-equipe"></div>
+                <p id="equipeVazia" class="vazio">Nenhum membro cadastrado ainda</p>
+            </div>
+        </div>
+        <div id="materiais" class="conteudo-aba">
+            <div class="cartao">
+                <div class="cartao-titulo">
+                    📂 Materiais — Músicas
+                    <button class="btn-principal btn-pequeno" onclick="adicionarMusicaMaterial()">➕ Adicionar Música</button>
+                </div>
+                <div id="listaMateriais"></div>
+                <p id="materiaisVazio" class="vazio">Nenhuma música cadastrada ainda. Clique em "Adicionar Música".</p>
+            </div>
+        </div>
+        <div id="admin" class="conteudo-aba">
+            <div class="cartao">
+                <div class="cartao-titulo">⚙️ Montar e Salvar Escala</div>
+                
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <label style="color: var(--texto-suave);">📅 Data e Hora:</label>
+                    <button class="btn-secundario btn-pequeno" onclick="preencherHoje()">Hoje</button>
+                    <button class="btn-secundario btn-pequeno" onclick="preencherAmanha()">Amanhã</button>
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                    <input type="date" id="campoData">
+                    <input type="time" id="campoHora">
+                </div>
+                
+                <input type="text" id="campoLocal" placeholder="📍 Local do evento">
+                <input type="text" id="campoTeclado" placeholder="🎹 Teclado">
+                <input type="text" id="campoGuitarra" placeholder="🎸 Guitarra">
+                <input type="text" id="campoBaixo" placeholder="🎻 Contrabaixo">
+                <input type="text" id="campoViolao" placeholder="🎸 Violão">
+                <input type="text" id="campoBateria" placeholder="🥁 Bateria">
+                <input type="text" id="campoMinistro" placeholder="🎤 Ministro">
+                <textarea id="campoBackVocal" placeholder="🎤 Back Vocal — escreva os 4 vocais aqui" style="min-height: 80px;"></textarea>
+                <input type="text" id="campoLider" placeholder="👑 Líder do Dia">
+                <input type="text" id="campoMinistros" placeholder="✝️ Ministros">
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn-principal" style="width: 100%;" onclick="salvarEscala()">💾 Salvar Escala</button>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-secundario" onclick="sair()">🚪 Sair</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let repertorioEscala = [];
+        let materiais = [];
+        let equipe = [];
+        let escalaSalva = {};
+        let presenca = {};
+        
+        const cargos = [
+            {id: 'Teclado', campo: 'valTeclado', presenca: 'presencaTeclado'},
+            {id: 'Guitarra', campo: 'valGuitarra', presenca: 'presencaGuitarra'},
+            {id: 'Contrabaixo', campo: 'valBaixo', presenca: 'presencaBaixo'},
+            {id: 'Violão', campo: 'valViolao', presenca: 'presencaViolao'},
+            {id: 'Bateria', campo: 'valBateria', presenca: 'presencaBateria'},
+            {id: 'Ministro', campo: 'valMinistro', presenca: 'presencaMinistro'},
+            {id: 'BackVocal', campo: 'valBackVocal', presenca: 'presencaBackVocal'},
+            {id: 'Lider', campo: 'valLider', presenca: 'presencaLider'},
+            {id: 'Ministros', campo: 'valMinistros', presenca: 'presencaMinistros'}
+        ];
+        
+        function mostrarAba(nome) {
+            document.querySelectorAll('.conteudo-aba').forEach(el => el.classList.remove('ativa'));
+            document.querySelectorAll('.navegacao .aba').forEach(el => el.classList.remove('ativa'));
+            document.getElementById(nome).classList.add('ativa');
+            event.target.classList.add('ativa');
+        }
+        
+        function entrar() {
+            const usuario = document.getElementById('usuario').value;
+            const senha = document.getElementById('senha').value;
+            
+            if (usuario === 'lider' && senha === '1234') {
+                document.getElementById('telaLogin').classList.add('oculto');
+                document.getElementById('conteudo').classList.remove('oculto');
+                document.getElementById('abaAdmin').classList.remove('oculta');
+                document.getElementById('saudacao').textContent = 'Olá, Líder! Tudo pronto!';
+                carregarDados();
+            } else if (usuario === 'louvor' && senha === '1234') {
+                document.getElementById('telaLogin').classList.add('oculto');
+                document.getElementById('conteudo').classList.remove('oculto');
+                document.getElementById('saudacao').textContent = 'Bem-vindo ao Map Music! Confirme sua presença abaixo ✅';
+                carregarDados();
+            } else {
+                alert('Usuário ou senha incorretos!');
+            }
+        }
+        
+        function carregarDados() {
+            const escalaStorage = localStorage.getItem('escalaMap');
+            const repertorioStorage = localStorage.getItem('repertorioEscalaMap');
+            const materiaisStorage = localStorage.getItem('materiaisMap');
+            const equipeStorage = localStorage.getItem('equipeMap');
+            const presencaStorage = localStorage.getItem('presencaMap');
+            
+            if (escalaStorage) {
+                escalaSalva = JSON.parse(escalaStorage);
+                document.getElementById('dataEscala').textContent = escalaSalva.dataExibicao || '📅 Nenhuma escala salva ainda';
+                document.getElementById('localEscala').textContent = escalaSalva.local || '📍 —';
+                document.getElementById('valTeclado').textContent = escalaSalva.teclado || '—';
+                document.getElementById('valGuitarra').textContent = escalaSalva.guitarra || '—';
+                document.getElementById('valBaixo').textContent = escalaSalva.baixo || '—';
+                document.getElementById('valViolao').textContent = escalaSalva.violao || '—';
+                document.getElementById('valBateria').textContent = escalaSalva.bateria || '—';
+                document.getElementById('valMinistro').textContent = escalaSalva.ministro || '—';
+                document.getElementById('valBackVocal').textContent = escalaSalva.backVocal || '—';
+                document.getElementById('valLider').textContent = escalaSalva.lider || '—';
+                document.getElementById('valMinistros').textContent = escalaSalva.ministros || '—';
+            }
+            
+            presenca = presencaStorage ? JSON.parse(presencaStorage) : {};
+            
+            repertorioEscala = repertorioStorage ? JSON.parse(repertorioStorage) : [];
+            materiais = materiaisStorage ? JSON.parse(materiaisStorage) : [];
+            equipe = equipeStorage ? JSON.parse(equipeStorage) : [];
+            
+            renderizarPresenca();
+            renderizarRepertorioEscala();
+            renderizarMateriais();
+            renderizarEquipe();
+            atualizarLinkWhatsApp();
+        }
+        
+        function nomeDiaSemana(data) {
+            const dias = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            return dias[data.getDay()];
+        }
+        
+        function preencherHoje() {
+            const hoje = new Date();
+            document.getElementById('campoData').value = hoje.toISOString().split('T')[0];
+        }
+        
+        function preencherAmanha() {
+            const amanha = new Date();
+            amanha.setDate(amanha.getDate() + 1);
+            document.getElementById('campoData').value = amanha.toISOString().split('T')[0];
+        }
+        
+        function salvarEscala() {
+            const data = document.getElementById('campoData').value;
+            const hora = document.getElementById('campoHora').value;
+            const local = document.getElementById('campoLocal').value;
+            
+            if (!data) {
+                alert('Preencha a data!');
+                return;
+            }
+            
+            const dataObj = new Date(data + 'T00:00:00');
+            const dataExibicao = '📅 ' + nomeDiaSemana(dataObj) + ', ' + data.split('-').reverse().join('/') + (hora ? ' — ' + hora : '');
+            
+            escalaSalva = {
+                dataExibicao,
+                local: '📍 ' + local,
+                teclado: document.getElementById('campoTeclado').value || '—',
+                guitarra: document.getElementById('campoGuitarra').value || '—',
+                baixo: document.getElementById('campoBaixo').value || '—',
+                violao: document.getElementById('campoViolao').value || '—',
+                bateria: document.getElementById('campoBateria').value || '—',
+                ministro: document.getElementById('campoMinistro').value || '—',
+                backVocal: document.getElementById('campoBackVocal').value || '—',
+                lider: document.getElementById('campoLider').value || '—',
+                ministros: document.getElementById('campoMinistros').value || '—'
+            };
+            
+            localStorage.setItem('escalaMap', JSON.stringify(escalaSalva));
+            presenca = {};
+            localStorage.setItem('presencaMap', JSON.stringify(presenca));
+            
+            document.getElementById('dataEscala').textContent = escalaSalva.dataExibicao;
+            document.getElementById('localEscala').textContent = escalaSalva.local;
+            document.getElementById('valTeclado').textContent = escalaSalva.teclado;
+            document.getElementById('valGuitarra').textContent = escalaSalva.guitarra;
+            document.getElementById('valBaixo').textContent = escalaSalva.baixo;
+            document.getElementById('valViolao').textContent = escalaSalva.violao;
+            document.getElementById('valBateria').textContent = escalaSalva.bateria;
+            document.getElementById('valMinistro').textContent = escalaSalva.ministro;
+            document.getElementById('valBackVocal').textContent = escalaSalva.backVocal;
+            document.getElementById('valLider').textContent = escalaSalva.lider;
+            document.getElementById('valMinistros').textContent = escalaSalva.ministros;
+            
+            renderizarPresenca();
+            atualizarLinkWhatsApp();
+            mostrarAba('escala');
+            alert('✅ Escala salva com sucesso! Os botões de confirmação já estão visíveis!');
+        }
+        
+        function renderizarPresenca() {
+            cargos.forEach(cargo => {
+                const container = document.getElementById(cargo.presenca);
+                if (!container) return;
+                
+                const nome = escalaSalva[cargo.campo.replace('val', '').toLowerCase()] || '—';
+                if (nome === '—') {
+                    container.innerHTML = '';
+                    return;
+                }
+                
+                const status = presenca[cargo.id] || 'pendente';
+                
+                container.innerHTML = `
+                    <button class="btn-presenca btn-pendente ${status === 'pendente' ? 'selecionado' : ''}" 
+                            onclick="confirmarPresenca('${cargo.id}', 'pendente')">❔</button>
+                    <button class="btn-presenca btn-disponivel ${status === 'disponivel' ? 'selecionado' : ''}" 
+                            onclick="confirmarPresenca('${cargo.id}', 'disponivel')">✅</button>
+                    <button class="btn-presenca btn-indisponivel ${status === 'indisponivel' ? 'selecionado' : ''}" 
+                            onclick="confirmarPresenca('${cargo.id}', 'indisponivel')">❌</button>
+                `;
+            });
+        }
+        
+        function confirmarPresenca(cargoId, status) {
+            presenca[cargoId] = status;
+            localStorage.setItem('presencaMap', JSON.stringify(presenca));
+            renderizarPresenca();
+            atualizarLinkWhatsApp();
+        }
+        
+        function adicionarMusicaEscala() {
+            const nome = prompt('Nome da música:');
+            if (!nome) return;
+            const tom = prompt('Tom:');
+            const voz = prompt('Voz:');
+            
+            repertorioEscala.push({ id: Date.now(), nome, tom: tom || '', voz: voz || '' });
+            localStorage.setItem('repertorioEscalaMap', JSON.stringify(repertorioEscala));
+            renderizarRepertorioEscala();
+            atualizarLinkWhatsApp();
+        }
+        
+        function removerMusicaEscala(id) {
+            if (confirm('Remover esta música?')) {
+                repertorioEscala = repertorioEscala.filter(m => m.id !== id);
+                localStorage.setItem('repertorioEscalaMap', JSON.stringify(repertorioEscala));
+                renderizarRepertorioEscala();
+                atualizarLinkWhatsApp();
+            }
+        }
+        
+        function renderizarRepertorioEscala() {
+            const container = document.getElementById('listaRepertorioEscala');
+            const vazio = document.getElementById('repertorioEscalaVazio');
+            
+            if (repertorioEscala.length === 0) {
+                container.innerHTML = '';
+                vazio.style.display = 'block';
+                return;
+            }
+            
+            vazio.style.display = 'none';
+            let html = '';
+            repertorioEscala.forEach((m, i) => {
+                html += `
+                <div class="item-musica-repertorio">
+                    <strong style="min-width: 30px;">${i + 1}.</strong>
+                    <span style="flex:1;">${m.nome}</span>
+                    <span style="min-width: 70px; text-align:center; color: var(--destaque-claro);">${m.tom || '—'}</span>
+                    <span style="min-width: 70px; text-align:center; color: var(--texto-suave);">${m.voz || '—'}</span>
+                    <button class="btn-remover btn-pequeno" onclick="removerMusicaEscala(${m.id})">🗑️</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        function adicionarMusicaMaterial() {
+            const nome = prompt('Nome da música:');
+            if (!nome) return;
+            const link = prompt('Link (YouTube, arquivo, etc):');
+            
+            materiais.push({ id: Date.now(), nome, link: link || '', ensaiada: false });
+            localStorage.setItem('materiaisMap', JSON.stringify(materiais));
+            renderizarMateriais();
+        }
+        
+        function alternarStatusMaterial(id) {
+            const idx = materiais.findIndex(m => m.id === id);
+            if (idx !== -1) {
+                materiais[idx].ensaiada = !materiais[idx].ensaiada;
+                localStorage.setItem('materiaisMap', JSON.stringify(materiais));
+                renderizarMateriais();
+            }
+        }
+        
+        function removerMaterial(id) {
+            if (confirm('Remover esta música?')) {
+                materiais = materiais.filter(m => m.id !== id);
+                localStorage.setItem('materiaisMap', JSON.stringify(materiais));
+                renderizarMateriais();
+            }
+        }
+        
+        function renderizarMateriais() {
+            const container = document.getElementById('listaMateriais');
+            const vazio = document.getElementById('materiaisVazio');
+            
+            if (materiais.length === 0) {
+                container.innerHTML = '';
+                vazio.style.display = 'block';
+                return;
+            }
+            
+            vazio.style.display = 'none';
+            let html = '';
+            materiais.forEach((m, i) => {
+                const classe = m.ensaiada ? 'ensaiada' : 'nao-ensaiada';
+                const status = m.ensaiada ? '🟩 Ensaiada' : '🟥 Não Ensaiada';
+                html += `
+                <div class="item-musica-repertorio">
+                    <strong style="min-width: 30px;">${i + 1}.</strong>
+                    <span class="musica-nome">${m.nome}</span>
+                    ${m.link ? `<a href="${m.link}" target="_blank" class="musica-link">🔗 Link</a>` : '<span style="color: var(--texto-suave); font-size: 0.85rem;">Sem link</span>'}
+                    <button class="status-btn ${classe}" onclick="alternarStatusMaterial(${m.id})">${status}</button>
+                    <button class="btn-remover btn-pequeno" onclick="removerMaterial(${m.id})">🗑️</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        function adicionarMembro() {
+            const nome = prompt('Nome do membro:');
+            if (!nome) return;
+            const funcao = prompt('Função (ex: Teclado, Contrabaixo, Ministro):');
+            if (!funcao) return;
+            
+            equipe.push({ id: Date.now(), nome, funcao });
+            localStorage.setItem('equipeMap', JSON.stringify(equipe));
+            renderizarEquipe();
+        }
+        
+        function removerMembro(id) {
+            if (confirm('Remover este membro?')) {
+                equipe = equipe.filter(m => m.id !== id);
+                localStorage.setItem('equipeMap', JSON.stringify(equipe));
+                renderizarEquipe();
+            }
+        }
+        
+        function renderizarEquipe() {
+            const container = document.getElementById('listaEquipe');
+            const vazio = document.getElementById('equipeVazia');
+            
+            if (equipe.length === 0) {
+                container.innerHTML = '';
+                vazio.style.display = 'block';
+                return;
+            }
+            
+            vazio.style.display = 'none';
+            let html = '';
+            equipe.forEach(m => {
+                html += `
+                <div class="cartao-membro">
+                    <div class="nome">${m.nome}</div>
+                    <div class="funcao">${m.funcao}</div>
+                    <button class="btn-remover btn-pequeno" style="margin-top: 8px;" onclick="removerMembro(${m.id})">Remover</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        function atualizarLinkWhatsApp() {
+            const data = escalaSalva.dataExibicao || '';
+            const local = escalaSalva.local || '';
+            
+            function statusTexto(cargoId, nome) {
+                const st = presenca[cargoId] || 'pendente';
+                const icone = st === 'disponivel' ? '✅' : st === 'indisponivel' ? '❌' : '❔';
+                return `${nome} ${icone}`;
+            }
+            
+            let repertorioTexto = '';
+            repertorioEscala.forEach((m, i) => {
+                repertorioTexto += (i + 1) + '. ' + m.nome;
+                if (m.tom) repertorioTexto += ' | Tom: ' + m.tom;
+                if (m.voz) repertorioTexto += ' | Voz: ' + m.voz;
+                repertorioTexto += '\n';
+            });
+            if (!repertorioTexto) repertorioTexto = 'Nenhuma música adicionada';
+            
+            const mensagem = 
+`=== ESCALA DE SERVIÇO ===
+${data}
+${local}
+🎹 Teclado: ${statusTexto('Teclado', escalaSalva.teclado || '—')}
+🎸 Guitarra: ${statusTexto('Guitarra', escalaSalva.guitarra || '—')}
+🎻 Contrabaixo: ${statusTexto('Contrabaixo', escalaSalva.baixo || '—')}
+🎸 Violão: ${statusTexto('Violão', escalaSalva.violao || '—')}
+🥁 Bateria: ${statusTexto('Bateria', escalaSalva.bateria || '—')}
+🎤 Ministro: ${statusTexto('Ministro', escalaSalva.ministro || '—')}
+🎤 Back Vocal: ${statusTexto('BackVocal', escalaSalva.backVocal || '—')}
+👑 Líder do Dia: ${statusTexto('Lider', escalaSalva.lider || '—')}
+✝️ Ministros: ${statusTexto('Ministros', escalaSalva.ministros || '—')}
+=== REPERTÓRIO ===
+${repertorioTexto}
+=========================
+Que Deus abençoe a todos! 🙏`;
+            
+            const link = 'https://wa.me/?text=' + encodeURIComponent(mensagem);
+            document.getElementById('linkWhatsApp').setAttribute('href', link);
+        }
+        
+        function sair() {
+            document.getElementById('telaLogin').classList.remove('oculto');
+            document.getElementById('conteudo').classList.add('oculto');
+            document.getElementById('usuario').value = '';
+            document.getElementById('senha').value = '';
+        }
+    </script>
+</body>
+</html>
