@@ -103,7 +103,7 @@
                 <label>Senha</label>
                 <input type="password" id="senha" placeholder="Digite sua senha">
             </div>
-            <button class="btn btn-primario" onclick="fazerLogin()">Entrar</button>
+            <button id="btn-entrar" class="btn btn-primario">Entrar</button>
         </div>
     </div>
     <div id="tela-principal" class="tela">
@@ -345,7 +345,6 @@
             });
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
         }
-    <script>
         async function carregarEquipe() {
             const res = await fetch('/api/equipe');
             const membros = await res.json();
@@ -356,13 +355,8 @@
             }
             lista.innerHTML = membros.map(m => `
                 <li class="item">
-                    <div>
-                        <div class="item-nome">${m.nome}</div>
-                        <div class="item-info">${m.funcao}</div>
-                    </div>
-                    <div class="acoes">
-                        <button class="btn btn-perigo btn-pequeno" onclick="excluirMembro(${m.id})">🗑️</button>
-                    </div>
+                    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.funcao}</div></div>
+                    <div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="excluirMembro(${m.id})">🗑️</button></div>
                 </li>
             `).join('');
         }
@@ -398,9 +392,7 @@
                 <li class="item">
                     <div>
                         <div class="item-nome">${m.nome}</div>
-                        <div class="item-info">
-                            ${m.link ? `<a href="${m.link}" target="_blank">🔗 Abrir link</a>` : 'Sem link'}
-                        </div>
+                        <div class="item-info">${m.link ? `<a href="${m.link}" target="_blank">🔗 Abrir link</a>` : 'Sem link'}</div>
                     </div>
                     <div class="acoes">
                         <button class="btn status-btn ${m.ensaiada ? 'ensaiada' : 'nao-ensaiada'}" 
@@ -447,9 +439,16 @@
             carregarEquipe();
             carregarRepertorio();
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnEntrar = document.getElementById('btn-entrar');
+            if (btnEntrar) {
+                btnEntrar.addEventListener('click', fazerLogin);
+            }
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') fazerLogin();
+            });
+        });
     </script>
 </body>
 </html>
-
-
-
