@@ -2,9 +2,9 @@
   "name": "mapa-musica",
   "version": "1.0.0",
   "description": "Sistema de Escala - Ministério de Louvor",
-  "main": "servidor.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node servidor.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
