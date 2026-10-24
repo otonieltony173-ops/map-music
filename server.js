@@ -91,7 +91,7 @@ async function inicializarBanco() {
     console.log('✅ Banco de dados pronto e conectado!');
   } catch (err) {
     console.error('❌ Erro ao inicializar banco:', err.message);
-    throw err; // Repassa o erro para a função de inicialização
+    throw err;
   }
 }
 
