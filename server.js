@@ -59,6 +59,16 @@ db.serialize(() => {
   });
 });
 
+// Middleware para verificar se é administrador
+function verificarAdmin(req, res, next) {
+  const { usuario, nivel } = req.body;
+  if (nivel === 'admin') {
+    next();
+  } else {
+    res.json({ sucesso: false, mensagem: 'Sem permissão de administrador' });
+  }
+}
+
 // Login
 app.post('/api/login', (req, res) => {
   const { usuario, senha } = req.body;
@@ -73,8 +83,8 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Salvar escala
-app.post('/api/escalas', (req, res) => {
+// Salvar escala — SÓ ADMIN PODE
+app.post('/api/escalas', verificarAdmin, (req, res) => {
   const { data, local, equipe, musicas, usuario } = req.body;
   db.run('INSERT INTO escalas (data, local, equipe, musicas, criadoPor, criadoEm) VALUES (?, ?, ?, ?, ?, datetime("now"))',
     [data, local, JSON.stringify(equipe), JSON.stringify(musicas), usuario],
@@ -84,7 +94,7 @@ app.post('/api/escalas', (req, res) => {
     });
 });
 
-// Listar escalas
+// Listar escalas — TODOS PODEM VER
 app.get('/api/escalas', (req, res) => {
   db.all('SELECT * FROM escalas ORDER BY criadoEm DESC', (err, rows) => {
     if (err) res.json([]);
@@ -99,7 +109,7 @@ app.get('/api/escalas', (req, res) => {
   });
 });
 
-// Confirmar presença
+// Confirmar presença — MEMBRO PODE
 app.post('/api/confirmar', (req, res) => {
   const { escalaId, funcao, nome, status } = req.body;
   db.run('REPLACE INTO confirmacoes (escalaId, funcao, nome, status) VALUES (?, ?, ?, ?)',
@@ -110,7 +120,7 @@ app.post('/api/confirmar', (req, res) => {
     });
 });
 
-// Obter confirmações
+// Obter confirmações — TODOS PODEM VER
 app.get('/api/confirmacoes/:escalaId', (req, res) => {
   db.all('SELECT * FROM confirmacoes WHERE escalaId = ?', [req.params.escalaId], (err, rows) => {
     if (err) res.json([]);
