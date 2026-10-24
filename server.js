@@ -6,24 +6,18 @@ const path = require('path');
 const app = express();
 const PORTA = process.env.PORT || 3000;
 
-// ==============================================
-// CONEXÃO COM O BANCO DE DADOS SUPABASE
-// ==============================================
+// CONEXÃO COM O SUPABASE
 const pool = new Pool({
   connectionString: 'postgresql://postgres:map12novaestacao@sxinommlolgttufauaky.supabase.co:5432/postgres',
   ssl: { rejectUnauthorized: false }
 });
 
-// ==============================================
-// CONFIGURAÇÕES
-// ==============================================
+// MIDDLEWARES
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
-// ==============================================
-// INICIALIZAR TABELAS
-// ==============================================
+// CRIAR TABELAS SE NÃO EXISTIREM
 async function inicializarBanco() {
   try {
     await pool.query(`
@@ -71,7 +65,7 @@ async function inicializarBanco() {
       );
     `);
 
-    // Usuários padrão
+    // USUÁRIOS PADRÃO
     const checkLider = await pool.query('SELECT id FROM usuarios WHERE usuario = $1', ['lider']);
     if (checkLider.rows.length === 0) {
       await pool.query(
@@ -84,7 +78,7 @@ async function inicializarBanco() {
     if (checkMembro.rows.length === 0) {
       await pool.query(
         'INSERT INTO usuarios (usuario, senha, tipo) VALUES ($1, $2, $3)',
-        ['membro', '1234', 'membro']
+        ['membro', '123456', 'membro']
       );
     }
 
@@ -95,9 +89,7 @@ async function inicializarBanco() {
 }
 inicializarBanco();
 
-// ==============================================
-// ROTAS DE AUTENTICAÇÃO
-// ==============================================
+// LOGIN
 app.post('/api/login', async (req, res) => {
   try {
     const { usuario, senha } = req.body;
@@ -105,7 +97,6 @@ app.post('/api/login', async (req, res) => {
       'SELECT tipo FROM usuarios WHERE usuario = $1 AND senha = $2',
       [usuario, senha]
     );
-    
     if (resultado.rows.length > 0) {
       res.json({ sucesso: true, tipo: resultado.rows[0].tipo });
     } else {
@@ -116,9 +107,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// ==============================================
-// ROTAS DE MEMBROS
-// ==============================================
+// MEMBROS
 app.get('/api/membros', async (req, res) => {
   try {
     const resultado = await pool.query('SELECT * FROM membros WHERE ativo = true ORDER BY nome');
@@ -163,9 +152,7 @@ app.delete('/api/membros/:id', async (req, res) => {
   }
 });
 
-// ==============================================
-// ROTAS DE ESCALA
-// ==============================================
+// ESCALA
 app.get('/api/escala', async (req, res) => {
   try {
     const escala = await pool.query('SELECT * FROM escalas ORDER BY id DESC LIMIT 1');
@@ -239,9 +226,7 @@ app.patch('/api/escala/:escalaId/membro/:membroId/status', async (req, res) => {
   }
 });
 
-// ==============================================
-// ROTAS DE MATERIAIS / MÚSICAS
-// ==============================================
+// MATERIAIS / MÚSICAS
 app.get('/api/materiais', async (req, res) => {
   try {
     const resultado = await pool.query('SELECT * FROM materiais WHERE ativo = true ORDER BY nome');
@@ -286,17 +271,13 @@ app.delete('/api/materiais/:id', async (req, res) => {
   }
 });
 
-// ==============================================
 // PÁGINA PRINCIPAL
-// ==============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ==============================================
 // INICIAR SERVIDOR
-// ==============================================
 app.listen(PORTA, () => {
   console.log(`🚀 Servidor rodando na porta ${PORTA}`);
-  console.log(`✅ Conectado ao banco de dados permanente!`);
+  console.log(`✅ Sistema pronto e conectado ao banco de dados!`);
 });
