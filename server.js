@@ -6,18 +6,24 @@ const path = require('path');
 const app = express();
 const PORTA = process.env.PORT || 3000;
 
-// CONEXÃO COM O SUPABASE
+// ==============================================
+// CONEXÃO COM O BANCO DE DADOS SUPABASE
+// ==============================================
 const pool = new Pool({
   connectionString: 'postgresql://postgres:map12novaestacao@sxinommlolgttufauaky.supabase.co:5432/postgres',
   ssl: { rejectUnauthorized: false }
 });
 
-// MIDDLEWARES
+// ==============================================
+// CONFIGURAÇÕES
+// ==============================================
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
-// CRIAR TABELAS SE NÃO EXISTIREM
+// ==============================================
+// INICIALIZAR TABELAS (se não existirem)
+// ==============================================
 async function inicializarBanco() {
   try {
     await pool.query(`
@@ -65,7 +71,7 @@ async function inicializarBanco() {
       );
     `);
 
-    // USUÁRIOS PADRÃO
+    // Inserir usuários padrão se não existirem
     const checkLider = await pool.query('SELECT id FROM usuarios WHERE usuario = $1', ['lider']);
     if (checkLider.rows.length === 0) {
       await pool.query(
@@ -82,14 +88,16 @@ async function inicializarBanco() {
       );
     }
 
-    console.log('✅ Banco de dados conectado e pronto!');
+    console.log('✅ Banco de dados pronto e conectado!');
   } catch (err) {
     console.error('❌ Erro ao inicializar banco:', err.message);
+    throw err; // Repassa o erro para a função de inicialização
   }
 }
-inicializarBanco();
 
-// LOGIN
+// ==============================================
+// ROTAS DE AUTENTICAÇÃO
+// ==============================================
 app.post('/api/login', async (req, res) => {
   try {
     const { usuario, senha } = req.body;
@@ -97,6 +105,7 @@ app.post('/api/login', async (req, res) => {
       'SELECT tipo FROM usuarios WHERE usuario = $1 AND senha = $2',
       [usuario, senha]
     );
+    
     if (resultado.rows.length > 0) {
       res.json({ sucesso: true, tipo: resultado.rows[0].tipo });
     } else {
@@ -107,7 +116,9 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// MEMBROS
+// ==============================================
+// ROTAS DE MEMBROS
+// ==============================================
 app.get('/api/membros', async (req, res) => {
   try {
     const resultado = await pool.query('SELECT * FROM membros WHERE ativo = true ORDER BY nome');
@@ -152,7 +163,9 @@ app.delete('/api/membros/:id', async (req, res) => {
   }
 });
 
-// ESCALA
+// ==============================================
+// ROTAS DE ESCALA
+// ==============================================
 app.get('/api/escala', async (req, res) => {
   try {
     const escala = await pool.query('SELECT * FROM escalas ORDER BY id DESC LIMIT 1');
@@ -187,12 +200,14 @@ app.post('/api/escala', async (req, res) => {
   try {
     const { data, observacoes, membros, musicas } = req.body;
     
+    // Criar nova escala
     const escalaResult = await pool.query(
       'INSERT INTO escalas (data, observacoes) VALUES ($1, $2) RETURNING *',
       [data, observacoes]
     );
     const escalaId = escalaResult.rows[0].id;
     
+    // Adicionar membros
     for (const m of membros || []) {
       await pool.query(
         'INSERT INTO escala_membros (escala_id, membro_id, status, funcao_na_escala) VALUES ($1, $2, $3, $4)',
@@ -200,6 +215,7 @@ app.post('/api/escala', async (req, res) => {
       );
     }
     
+    // Adicionar músicas
     for (const mid of musicas || []) {
       await pool.query(
         'INSERT INTO escalas_musicas (escala_id, material_id) VALUES ($1, $2)',
@@ -226,7 +242,9 @@ app.patch('/api/escala/:escalaId/membro/:membroId/status', async (req, res) => {
   }
 });
 
-// MATERIAIS / MÚSICAS
+// ==============================================
+// ROTAS DE MATERIAIS / MÚSICAS
+// ==============================================
 app.get('/api/materiais', async (req, res) => {
   try {
     const resultado = await pool.query('SELECT * FROM materiais WHERE ativo = true ORDER BY nome');
@@ -271,13 +289,27 @@ app.delete('/api/materiais/:id', async (req, res) => {
   }
 });
 
+// ==============================================
 // PÁGINA PRINCIPAL
+// ==============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ==============================================
 // INICIAR SERVIDOR
-app.listen(PORTA, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORTA}`);
-  console.log(`✅ Sistema pronto e conectado ao banco de dados!`);
-});
+// ==============================================
+async function iniciarServidor() {
+  try {
+    await inicializarBanco();
+    app.listen(PORTA, () => {
+      console.log(`🚀 Servidor rodando na porta ${PORTA}`);
+      console.log(`✅ Sistema pronto e conectado ao banco!`);
+    });
+  } catch (err) {
+    console.error('❌ Falha ao iniciar o servidor:', err.message);
+    process.exit(1);
+  }
+}
+
+iniciarServidor();
