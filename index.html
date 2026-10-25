@@ -257,12 +257,6 @@ body {
   color: var(--texto);
   text-align: center;
 }
-.escala-input-name input.somente-leitura {
-  background: transparent;
-  border: none;
-  color: var(--texto);
-  cursor: default;
-}
 .escala-status { display: flex; gap: 6px; }
 .repertorio-culto-item {
   padding: 10px 12px;
@@ -343,8 +337,8 @@ a { color: var(--secundaria); text-decoration: none; }
 
   <nav class="navegacao">
     <button class="btn nav-btn ativo" onclick="mostrarAba('escala')">📋 Escala</button>
-    <button class="btn nav-btn" id="nav-equipe" onclick="mostrarAba('equipe')">👥 Equipe</button>
-    <button class="btn nav-btn" id="nav-repertorio" onclick="mostrarAba('repertorio')">🎶 Materiais</button>
+    <button class="btn nav-btn" onclick="mostrarAba('equipe')">👥 Equipe</button>
+    <button class="btn nav-btn" onclick="mostrarAba('repertorio')">🎶 Materiais</button>
   </nav>
 
   <!-- ABA ESCALA -->
@@ -366,7 +360,6 @@ a { color: var(--secundaria); text-decoration: none; }
     <div class="card">
       <h3>🎹 Escala</h3>
       <div class="escala-grade" id="escala-corpo">
-        <!-- Teclado -->
         <div class="escala-item">
           <div class="escala-instrumento">🎹 Teclado</div>
           <div class="escala-input-name">
@@ -376,7 +369,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-teclado" onclick="trocarStatus('teclado')">⏳</button>
           </div>
         </div>
-        <!-- Guitarra -->
         <div class="escala-item">
           <div class="escala-instrumento">🎸 Guitarra</div>
           <div class="escala-input-name">
@@ -386,7 +378,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-guitarra" onclick="trocarStatus('guitarra')">⏳</button>
           </div>
         </div>
-        <!-- Contrabaixo -->
         <div class="escala-item">
           <div class="escala-instrumento">🎻 Contrabaixo</div>
           <div class="escala-input-name">
@@ -396,7 +387,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-contrabaixo" onclick="trocarStatus('contrabaixo')">⏳</button>
           </div>
         </div>
-        <!-- Violão -->
         <div class="escala-item">
           <div class="escala-instrumento">🎸 Violão</div>
           <div class="escala-input-name">
@@ -406,7 +396,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-violao" onclick="trocarStatus('violao')">⏳</button>
           </div>
         </div>
-        <!-- Bateria -->
         <div class="escala-item">
           <div class="escala-instrumento">🥁 Bateria</div>
           <div class="escala-input-name">
@@ -416,7 +405,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-bateria" onclick="trocarStatus('bateria')">⏳</button>
           </div>
         </div>
-        <!-- Ministro -->
         <div class="escala-item">
           <div class="escala-instrumento">🎤 Ministro</div>
           <div class="escala-input-name">
@@ -426,7 +414,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-ministro" onclick="trocarStatus('ministro')">⏳</button>
           </div>
         </div>
-        <!-- Back Vocal -->
         <div class="escala-item">
           <div class="escala-instrumento">🎤 Back Vocal</div>
           <div class="escala-input-name">
@@ -436,7 +423,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-backvocal" onclick="trocarStatus('backvocal')">⏳</button>
           </div>
         </div>
-        <!-- Vocal -->
         <div class="escala-item">
           <div class="escala-instrumento">🎤 Vocal</div>
           <div class="escala-input-name">
@@ -446,7 +432,6 @@ a { color: var(--secundaria); text-decoration: none; }
             <button class="btn status-btn status-pendente" id="status-btn-vocal" onclick="trocarStatus('vocal')">⏳</button>
           </div>
         </div>
-        <!-- Líder do Dia -->
         <div class="escala-item">
           <div class="escala-instrumento">👤 Líder do Dia</div>
           <div class="escala-input-name">
@@ -460,7 +445,7 @@ a { color: var(--secundaria); text-decoration: none; }
     </div>
 
     <!-- REPERTÓRIO DO CULTO -->
-    <div class="card">
+    <div class="card" id="bloco-culto-musicas">
       <h3>📂 Repertório do Culto</h3>
       <div id="form-culto-musica">
         <div class="linha-form">
@@ -480,15 +465,15 @@ a { color: var(--secundaria); text-decoration: none; }
       </ul>
     </div>
 
-    <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;" id="botoes-salvar-escala">
-      <button class="btn btn-primario" onclick="salvarEscala()">💾 Salvar Escala</button>
-      <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">📱 Enviar WhatsApp</button>
+    <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;" id="botoes-escala">
+      <button class="btn btn-primario" id="btn-salvar-escala" onclick="salvarEscala()">💾 Salvar Escala</button>
+      <button class="btn btn-whatsapp" id="btn-whatsapp" onclick="enviarWhatsApp()">📱 Enviar WhatsApp</button>
     </div>
   </div>
 
   <!-- ABA EQUIPE -->
   <div id="aba-equipe" class="aba-conteudo oculto">
-    <div id="form-adicionar-membro" class="card">
+    <div id="bloco-add-membro" class="card">
       <h3>➕ Adicionar Membro</h3>
       <div class="linha-form">
         <div class="campo">
@@ -522,7 +507,7 @@ a { color: var(--secundaria); text-decoration: none; }
 
   <!-- ABA MATERIAIS -->
   <div id="aba-repertorio" class="aba-conteudo oculto">
-    <div id="form-adicionar-musica" class="card">
+    <div id="bloco-add-musica" class="card">
       <h3>🎶 Adicionar Música</h3>
       <div class="linha-form">
         <div class="campo">
@@ -578,38 +563,28 @@ const cargos = [
   {chave: 'lider', nome: 'Líder do Dia', icone: '👤'}
 ];
 
-// === APLICAÇÃO DAS PERMISSÕES ===
+// === PERMISSÕES ===
 function aplicarPermissoes() {
   const ehLider = (nivelUsuario === 'lider');
 
-  // Campos de data e local — só líder edita
+  // Campos de data e local
   document.getElementById('escala-data').disabled = !ehLider;
   document.getElementById('escala-local').disabled = !ehLider;
 
-  // Campos de nome da escala — só líder edita
+  // Campos de nomes na escala
   cargos.forEach(c => {
     const input = document.getElementById(`escala-input-${c.chave}`);
-    if (input) {
-      input.disabled = !ehLider;
-      if (!ehLider) {
-        input.classList.add('somente-leitura');
-      } else {
-        input.classList.remove('somente-leitura');
-      }
-    }
+    if (input) input.disabled = !ehLider;
   });
 
   // Botões Salvar e WhatsApp — só líder vê
-  document.getElementById('botoes-salvar-escala').classList.toggle('oculto', !ehLider);
+  document.getElementById('btn-salvar-escala').classList.toggle('oculto', !ehLider);
+  document.getElementById('btn-whatsapp').classList.toggle('oculto', !ehLider);
 
-  // Formulário de adicionar música no culto — só líder vê
+  // Formulários — só líder vê
   document.getElementById('form-culto-musica').classList.toggle('oculto', !ehLider);
-
-  // Formulário de adicionar membro — só líder vê
-  document.getElementById('form-adicionar-membro').classList.toggle('oculto', !ehLider);
-
-  // Formulário de adicionar música no repertório — só líder vê
-  document.getElementById('form-adicionar-musica').classList.toggle('oculto', !ehLider);
+  document.getElementById('bloco-add-membro').classList.toggle('oculto', !ehLider);
+  document.getElementById('bloco-add-musica').classList.toggle('oculto', !ehLider);
 }
 
 async function fazerLogin() {
@@ -650,6 +625,7 @@ function mostrarAba(nome) {
   event.target.classList.add('ativo');
   document.querySelectorAll('.aba-conteudo').forEach(a => a.classList.add('oculto'));
   document.getElementById(`aba-${nome}`).classList.remove('oculto');
+  aplicarPermissoes(); // REAPLICA AO TROCAR DE ABA
   if (nome === 'escala') carregarEscala();
   if (nome === 'equipe') carregarEquipe();
   if (nome === 'repertorio') carregarRepertorio();
@@ -693,13 +669,9 @@ async function carregarEscala() {
     if (btn) {
       btn.className = '';
       btn.classList.add('btn', 'status-btn', `status-${status}`);
-      if (status === 'confirmado') btn.textContent = '✅';
-      else if (status === 'recusado') btn.textContent = '❌';
-      else btn.textContent = '⏳';
+      btn.textContent = status === 'confirmado' ? '✅' : status === 'recusado' ? '❌' : '⏳';
     }
   });
-
-  // Reaplica permissões após carregar
   aplicarPermissoes();
 }
 
@@ -707,10 +679,7 @@ function adicionarMusicaCulto() {
   if (nivelUsuario !== 'lider') return;
   const nome = document.getElementById('culto-musica-nome').value.trim();
   const link = document.getElementById('culto-musica-link').value.trim();
-  if (!nome) {
-    alert('Digite o nome da música!');
-    return;
-  }
+  if (!nome) { alert('Digite o nome da música!'); return; }
   cultoMusicas.push({id: Date.now(), nome, link});
   document.getElementById('culto-musica-nome').value = '';
   document.getElementById('culto-musica-link').value = '';
@@ -736,24 +705,17 @@ function renderizarCultoMusicas() {
         <div class="item-nome">🎵 ${m.nome}</div>
         <div class="item-info">${m.link ? `<a href="${m.link}" target="_blank">🔗 ${m.link}</a>` : 'Sem link'}</div>
       </div>
-      ${ehLider ? `<div class="acoes">
-        <button class="btn btn-perigo btn-pequeno" onclick="removerMusicaCulto(${m.id})">🗑️</button>
-      </div>` : ''}
+      ${ehLider ? `<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="removerMusicaCulto(${m.id})">🗑️</button></div>` : ''}
     </li>
   `).join('');
 }
 
 async function salvarEscala() {
-  if (nivelUsuario !== 'lider') {
-    alert('Apenas o líder pode salvar a escala.');
-    return;
-  }
+  if (nivelUsuario !== 'lider') { alert('Apenas o líder pode salvar.'); return; }
   const data = document.getElementById('escala-data').value;
   const local = document.getElementById('escala-local').value;
   const escala = {
-    dataExibicao: data,
-    local: local,
-    cultoMusicas: cultoMusicas,
+    dataExibicao: data, local: local, cultoMusicas: cultoMusicas,
     teclado: document.getElementById('escala-input-teclado')?.value || '',
     guitarra: document.getElementById('escala-input-guitarra')?.value || '',
     contrabaixo: document.getElementById('escala-input-contrabaixo')?.value || '',
@@ -788,10 +750,7 @@ async function salvarEscala() {
 }
 
 function enviarWhatsApp() {
-  if (nivelUsuario !== 'lider') {
-    alert('Apenas o líder pode enviar a escala pelo WhatsApp.');
-    return;
-  }
+  if (nivelUsuario !== 'lider') { alert('Apenas o líder pode enviar.'); return; }
   const data = document.getElementById('escala-data').value || '---';
   const local = document.getElementById('escala-local').value || '---';
   let texto = `📋 ESCALA - Ministério de Louvor\n📅 Data: ${data}\n📍 Local: ${local}\n\n👥 EQUIPE:\n`;
@@ -809,10 +768,7 @@ function enviarWhatsApp() {
   cargos.forEach(c => {
     const nome = nomes[c.chave] || '—';
     const status = window.statusEscala[c.chave];
-    let statusTexto = '';
-    if (status === 'confirmado') statusTexto = '✅ Disponível';
-    else if (status === 'recusado') statusTexto = '❌ Indisponível';
-    else statusTexto = '⏳ Pendente';
+    const statusTexto = status === 'confirmado' ? '✅ Disponível' : status === 'recusado' ? '❌ Indisponível' : '⏳ Pendente';
     texto += `${c.icone} ${c.nome}: ${nome} — ${statusTexto}\n`;
   });
   if (cultoMusicas.length > 0) {
@@ -823,8 +779,7 @@ function enviarWhatsApp() {
       texto += '\n';
     });
   }
-  const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
-  window.open(link, '_blank');
+  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
 async function carregarEquipe() {
@@ -842,9 +797,7 @@ async function carregarEquipe() {
         <div class="item-nome">${m.nome}</div>
         <div class="item-info">${m.funcaoNome || m.funcao}</div>
       </div>
-      ${ehLider ? `<div class="acoes">
-        <button class="btn btn-perigo btn-pequeno" onclick="excluirMembro(${m.id})">🗑️</button>
-      </div>` : ''}
+      ${ehLider ? `<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="excluirMembro(${m.id})">🗑️</button></div>` : ''}
     </li>
   `).join('');
 }
@@ -853,10 +806,7 @@ async function adicionarMembro() {
   if (nivelUsuario !== 'lider') return;
   const nome = document.getElementById('membro-nome').value.trim();
   const funcao = document.getElementById('membro-funcao').value;
-  if (!nome) {
-    alert('Digite o nome!');
-    return;
-  }
+  if (!nome) { alert('Digite o nome!'); return; }
   await fetch('/api/equipe', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -902,10 +852,7 @@ async function adicionarMusica() {
   if (nivelUsuario !== 'lider') return;
   const nome = document.getElementById('musica-nome').value.trim();
   const link = document.getElementById('musica-link').value.trim();
-  if (!nome) {
-    alert('Digite o nome da música!');
-    return;
-  }
+  if (!nome) { alert('Digite o nome da música!'); return; }
   await fetch('/api/repertorio', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -941,9 +888,7 @@ function carregarTudo() {
 
 document.addEventListener('DOMContentLoaded', function() {
   const btnEntrar = document.getElementById('btn-entrar');
-  if (btnEntrar) {
-    btnEntrar.addEventListener('click', fazerLogin);
-  }
+  if (btnEntrar) btnEntrar.addEventListener('click', fazerLogin);
   document.getElementById('senha').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') fazerLogin();
   });
