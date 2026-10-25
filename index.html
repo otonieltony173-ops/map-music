@@ -2,7 +2,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ministério de Louvor | Map Music</title>
-<meta name="theme-color" content="#10B981">
 <style>
 :root {
   --fundo: #0f172a;
@@ -65,6 +64,7 @@ body { background: var(--fundo); color: var(--texto); min-height: 100vh; }
 .oculto { display: none !important; }
 .sem-dados { text-align: center; padding: 30px; color: var(--texto-suave); font-style: italic; }
 a { color: var(--secundaria); text-decoration: none; }
+.botoes-fixos { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
 .rodape { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--borda); color: var(--texto-suave); font-size: 12px; }
 </style>
 </head>
@@ -168,23 +168,25 @@ a { color: var(--secundaria); text-decoration: none; }
       </div>
     </div>
 
+    <!-- REPERTÓRIO DO CULTO - VISÍVEL PARA TODOS TESTAR -->
     <div class="card" id="bloco-culto-musicas">
       <h3>📂 Repertório do Culto</h3>
       <div id="form-culto-musica">
         <div class="linha-form">
-          <div class="campo"><label>Música</label><input type="text" id="cm_nome"></div>
-          <div class="campo"><label>Link YouTube</label><input type="url" id="cm_link"></div>
+          <div class="campo"><label>Música</label><input type="text" id="cm_nome" placeholder="Nome da música"></div>
+          <div class="campo"><label>Link YouTube</label><input type="url" id="cm_link" placeholder="https://..."></div>
         </div>
-        <button class="btn btn-primario btn-pequeno" onclick="addCultoMusica()">➕ Adicionar</button>
+        <button class="btn btn-primario btn-pequeno" onclick="addCultoMusica()">➕ Adicionar Música</button>
       </div>
       <ul id="lista-culto-musicas" style="margin-top:15px;">
         <li class="sem-dados">Nenhuma música adicionada.</li>
       </ul>
     </div>
 
-    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;" id="botoes-salvar">
-      <button class="btn btn-primario" onclick="salvar()">💾 Salvar Escala</button>
-      <button class="btn btn-whatsapp" onclick="enviarWpp()">📱 WhatsApp</button>
+    <!-- BOTÕES - AGORA APARECENDO FIXO AQUI -->
+    <div class="botoes-fixos" id="area-botoes-principais">
+      <button class="btn btn-primario" id="btn-salvar-total" onclick="salvar()">💾 Salvar Escala</button>
+      <button class="btn btn-whatsapp" id="btn-whatsapp-total" onclick="enviarWpp()">📱 Enviar pelo WhatsApp</button>
     </div>
   </div>
 
@@ -193,7 +195,7 @@ a { color: var(--secundaria); text-decoration: none; }
     <div class="card" id="bloco-add-membro">
       <h3>➕ Adicionar Membro</h3>
       <div class="linha-form">
-        <div class="campo"><label>Nome</label><input type="text" id="m_nome"></div>
+        <div class="campo"><label>Nome</label><input type="text" id="m_nome" placeholder="Nome completo"></div>
         <div class="campo"><label>Função</label>
           <select id="m_funcao">
             <option value="ministro">Ministro</option>
@@ -208,7 +210,7 @@ a { color: var(--secundaria); text-decoration: none; }
           </select>
         </div>
       </div>
-      <button class="btn btn-primario" onclick="addMembro()">➕ Adicionar</button>
+      <button class="btn btn-primario" onclick="addMembro()">➕ Cadastrar Membro</button>
     </div>
     <div class="card">
       <h3>👥 Equipe</h3>
@@ -221,13 +223,13 @@ a { color: var(--secundaria); text-decoration: none; }
     <div class="card" id="bloco-add-musica">
       <h3>🎶 Adicionar Música</h3>
       <div class="linha-form">
-        <div class="campo"><label>Nome</label><input type="text" id="mus_nome"></div>
-        <div class="campo"><label>Link YouTube</label><input type="url" id="mus_link"></div>
+        <div class="campo"><label>Nome da Música</label><input type="text" id="mus_nome" placeholder="Digite o nome"></div>
+        <div class="campo"><label>Link YouTube</label><input type="url" id="mus_link" placeholder="https://..."></div>
       </div>
-      <button class="btn btn-primario" onclick="addMusica()">➕ Adicionar</button>
+      <button class="btn btn-primario" onclick="addMusica()">➕ Adicionar ao Repertório</button>
     </div>
     <div class="card">
-      <h3>📚 Repertório</h3>
+      <h3>📚 Repertório / Materiais</h3>
       <ul id="lista-musicas"><li class="sem-dados">Nenhuma música cadastrada.</li></ul>
     </div>
   </div>
@@ -255,25 +257,25 @@ const cargos = [
   {chave:'lider',nome:'Líder do Dia',icone:'👤'}
 ];
 
-// === PERMISSÕES — AQUI ESTÁ O CERTO ===
+// === PERMISSÕES SIMPLIFICADAS ===
 function aplicarPermissoes() {
   const ehLider = (perfil === 'lider');
+  
+  console.log('Perfil detectado:', perfil, 'É líder?', ehLider); // Para depuração
 
-  // Campos de data e local
+  // Mostra/esconde formulários e botões
+  document.getElementById('bloco-culto-musicas').style.display = ehLider ? 'block' : 'none';
+  document.getElementById('area-botoes-principais').style.display = ehLider ? 'flex' : 'none';
+  document.getElementById('bloco-add-membro').style.display = ehLider ? 'block' : 'none';
+  document.getElementById('bloco-add-musica').style.display = ehLider ? 'block' : 'none';
+
+  // Campos editáveis
   document.getElementById('edata').disabled = !ehLider;
   document.getElementById('elocal').disabled = !ehLider;
-
-  // Campos de nomes na escala
   cargos.forEach(c => {
     const inp = document.getElementById(`i_${c.chave}`);
     if (inp) inp.disabled = !ehLider;
   });
-
-  // BLOCOS QUE SÓ LÍDER VÊ
-  document.getElementById('bloco-culto-musicas').style.display = ehLider ? 'block' : 'none';
-  document.getElementById('botoes-salvar').style.display = ehLider ? 'flex' : 'none';
-  document.getElementById('bloco-add-membro').style.display = ehLider ? 'block' : 'none';
-  document.getElementById('bloco-add-musica').style.display = ehLider ? 'block' : 'none';
 }
 
 async function entrar() {
@@ -285,6 +287,9 @@ async function entrar() {
     body: JSON.stringify({usuario:u, senha:s})
   });
   const d = await res.json();
+  
+  console.log('Resposta do servidor:', d); // Para ver o que volta
+
   if (d.sucesso) {
     usuario = d.usuario;
     perfil = d.nivel;
@@ -312,7 +317,7 @@ function aba(nome) {
   event.target.classList.add('ativo');
   document.querySelectorAll('.aba-conteudo').forEach(a=>a.classList.add('oculto'));
   document.getElementById(nome).classList.remove('oculto');
-  aplicarPermissoes(); // REAPLICA SEMPRE
+  aplicarPermissoes();
   if (nome==='escala') carregarEscala();
   if (nome==='equipe') carregarEquipe();
   if (nome==='materiais') carregarRepertorio();
@@ -353,10 +358,10 @@ async function carregarEscala() {
 }
 
 function addCultoMusica() {
-  if (perfil!=='lider') return;
+  if (perfil!=='lider') {alert('Apenas o líder pode adicionar!');return;}
   const n = document.getElementById('cm_nome').value.trim();
   const l = document.getElementById('cm_link').value.trim();
-  if (!n) {alert('Digite o nome!');return;}
+  if (!n) {alert('Digite o nome da música!');return;}
   cultosMusicas.push({id:Date.now(),nome:n,link:l});
   document.getElementById('cm_nome').value='';
   document.getElementById('cm_link').value='';
@@ -377,13 +382,13 @@ function renderCultoMusicas() {
   }
   const ehLider = (perfil==='lider');
   l.innerHTML = cultosMusicas.map(m=>`<li class="item">
-    <div><div class="item-nome">🎵 ${m.nome}</div><div class="item-info">${m.link?`<a href="${m.link}" target="_blank">🔗 ${m.link}</a>`:'Sem link'}</div></div>
+    <div><div class="item-nome">🎵 ${m.nome}</div><div class="item-info">${m.link?`<a href="${m.link}" target="_blank">🔗 ${m.link}</a>`:'Sem link cadastrado'}</div></div>
     ${ehLider?`<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="remCultoMusica(${m.id})">🗑️</button></div>`:''}
   </li>`).join('');
 }
 
 async function salvar() {
-  if (perfil!=='lider') {alert('Só o líder pode salvar.');return;}
+  if (perfil!=='lider') {alert('Apenas o líder pode salvar a escala!');return;}
   const d = document.getElementById('edata').value;
   const loc = document.getElementById('elocal').value;
   const obj = {
@@ -408,12 +413,12 @@ async function salvar() {
     body:JSON.stringify(obj)
   });
   await res.json();
-  alert('✅ Salvo!');
+  alert('✅ Escala salva com sucesso!');
   carregarEscala();
 }
 
 function enviarWpp() {
-  if (perfil!=='lider') {alert('Só o líder pode enviar.');return;}
+  if (perfil!=='lider') {alert('Apenas o líder pode enviar pelo WhatsApp!');return;}
   const d = document.getElementById('edata').value||'---';
   const loc = document.getElementById('elocal').value||'---';
   let txt = `📋 ESCALA - Ministério de Louvor\n📅 Data: ${d}\n📍 Local: ${loc}\n\n👥 EQUIPE:\n`;
@@ -452,7 +457,7 @@ async function carregarEquipe() {
   const ehLider = (perfil==='lider');
   l.innerHTML = arr.map(m=>`<li class="item">
     <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.funcaoNome||m.funcao}</div></div>
-    ${ehLider?`<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="delMembro(${m.id})">🗑️</button></div>`:''}
+    ${ehLider?`<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="delMembro(${m.id})">🗑️ Excluir</button></div>`:''}
   </li>`).join('');
 }
 
@@ -460,7 +465,7 @@ async function addMembro() {
   if (perfil!=='lider') return;
   const n = document.getElementById('m_nome').value.trim();
   const f = document.getElementById('m_funcao').value;
-  if (!n) {alert('Digite o nome!');return;}
+  if (!n) {alert('Digite o nome do membro!');return;}
   await fetch('/api/equipe', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({nome:n,funcao:f})
@@ -471,7 +476,7 @@ async function addMembro() {
 
 async function delMembro(id) {
   if (perfil!=='lider') return;
-  if (!confirm('Excluir?')) return;
+  if (!confirm('Tem certeza que deseja excluir este membro?')) return;
   await fetch(`/api/equipe/${id}`, {method:'DELETE'});
   carregarEquipe();
 }
@@ -483,10 +488,10 @@ async function carregarRepertorio() {
   if (arr.length===0) {l.innerHTML='<li class="sem-dados">Nenhuma música cadastrada.</li>';return;}
   const ehLider = (perfil==='lider');
   l.innerHTML = arr.map(m=>`<li class="item">
-    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.link?`<a href="${m.link}" target="_blank">🔗 Abrir</a>`:'Sem link'}</div></div>
+    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.link?`<a href="${m.link}" target="_blank">🔗 Abrir no YouTube</a>`:'Sem link cadastrado'}</div></div>
     ${ehLider?`<div class="acoes">
       <button class="btn status-btn ${m.ensaiada?'ensaiada':'nao-ensaiada'}" onclick="altStatusMus(${m.id},${m.ensaiada?0:1})">${m.ensaiada?'✅ Ensaiada':'❌ Não Ensaiada'}</button>
-      <button class="btn btn-perigo btn-pequeno" onclick="delMus(${m.id})">🗑️</button>
+      <button class="btn btn-perigo btn-pequeno" onclick="delMus(${m.id})">🗑️ Excluir</button>
     </div>`:''}
   </li>`).join('');
 }
@@ -495,7 +500,7 @@ async function addMusica() {
   if (perfil!=='lider') return;
   const n = document.getElementById('mus_nome').value.trim();
   const l = document.getElementById('mus_link').value.trim();
-  if (!n) {alert('Digite o nome!');return;}
+  if (!n) {alert('Digite o nome da música!');return;}
   await fetch('/api/repertorio', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({nome:n,link:l,ensaiada:0})
@@ -516,7 +521,7 @@ async function altStatusMus(id, e) {
 
 async function delMus(id) {
   if (perfil!=='lider') return;
-  if (!confirm('Excluir?')) return;
+  if (!confirm('Excluir esta música do repertório?')) return;
   await fetch(`/api/repertorio/${id}`, {method:'DELETE'});
 }
 
