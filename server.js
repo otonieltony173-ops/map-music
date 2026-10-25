@@ -1,279 +1,259 @@
 const express = require('express');
-const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+
 const app = express();
 const PORTA = process.env.PORT || 3000;
+const ARQUIVO_DADOS = './dados.json';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
+// ==============================================
+// CONFIGURAÇÕES
+// ==============================================
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
-async function inicializarBanco() {
+// ==============================================
+// GERENCIAR DADOS
+// ==============================================
+function lerDados() {
   try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id SERIAL PRIMARY KEY,
-        usuario TEXT UNIQUE NOT NULL,
-        senha TEXT NOT NULL,
-        tipo TEXT NOT NULL
-      );
-      
-      CREATE TABLE IF NOT EXISTS membros (
-        id SERIAL PRIMARY KEY,
-        nome TEXT NOT NULL,
-        funcao TEXT NOT NULL,
-        ativo BOOLEAN DEFAULT true
-      );
-      
-      CREATE TABLE IF NOT EXISTS escalas (
-        id SERIAL PRIMARY KEY,
-        data TEXT NOT NULL,
-        observacoes TEXT DEFAULT '',
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      CREATE TABLE IF NOT EXISTS escala_membros (
-        id SERIAL PRIMARY KEY,
-        escala_id INTEGER REFERENCES escalas(id) ON DELETE CASCADE,
-        membro_id INTEGER REFERENCES membros(id),
-        status TEXT DEFAULT 'pendente',
-        funcao_na_escala TEXT
-      );
-      
-      CREATE TABLE IF NOT EXISTS materiais (
-        id SERIAL PRIMARY KEY,
-        nome TEXT NOT NULL,
-        link TEXT DEFAULT '',
-        status TEXT DEFAULT 'nao_ensaiada',
-        ativo BOOLEAN DEFAULT true
-      );
-      
-      CREATE TABLE IF NOT EXISTS escalas_musicas (
-        id SERIAL PRIMARY KEY,
-        escala_id INTEGER REFERENCES escalas(id) ON DELETE CASCADE,
-        material_id INTEGER REFERENCES materiais(id)
-      );
-    `);
-    
-    const checkLider = await pool.query('SELECT id FROM usuarios WHERE usuario = $1', ['lider']);
-    if (checkLider.rows.length === 0) {
-      await pool.query(
-        'INSERT INTO usuarios (usuario, senha, tipo) VALUES ($1, $2, $3)',
-        ['lider', '1234', 'lider']
-      );
+    if (!fs.existsSync(ARQUIVO_DADOS)) {
+      return {
+        usuarios: [
+          { usuario: 'lider', senha: '1234', tipo: 'lider' },
+          { usuario: 'membro', senha: '1234', tipo: 'membro' }
+        ],
+        membros: [],
+        escalas: [],
+        escala_membros: [],
+        materiais: [],
+        escalas_musicas: []
+      };
     }
-    const checkMembro = await pool.query('SELECT id FROM usuarios WHERE usuario = $1', ['membro']);
-    if (checkMembro.rows.length === 0) {
-      await pool.query(
-        'INSERT INTO usuarios (usuario, senha, tipo) VALUES ($1, $2, $3)',
-        ['membro', '123456', 'membro']
-      );
-    }
-    console.log('✅ Banco conectado!');
+    const texto = fs.readFileSync(ARQUIVO_DADOS, 'utf8');
+    return JSON.parse(texto);
   } catch (err) {
-    console.error('❌ Erro:', err.message);
-    throw err;
+    console.error('Erro ao ler dados:', err);
+    return {
+      usuarios: [
+        { usuario: 'lider', senha: '1234', tipo: 'lider' },
+        { usuario: 'membro', senha: '1234', tipo: 'membro' }
+      ],
+      membros: [],
+      escalas: [],
+      escala_membros: [],
+      materiais: [],
+      escalas_musicas: []
+    };
   }
 }
 
-app.post('/api/login', async (req, res) => {
+function salvarDados(dados) {
   try {
-    const { usuario, senha } = req.body;
-    const resultado = await pool.query(
-      'SELECT tipo FROM usuarios WHERE usuario = $1 AND senha = $2',
-      [usuario, senha]
-    );
-    if (resultado.rows.length > 0) {
-      res.json({ sucesso: true, tipo: resultado.rows[0].tipo });
-    } else {
-      res.json({ sucesso: false, mensagem: 'Usuário ou senha incorretos' });
-    }
+    fs.writeFileSync(ARQUIVO_DADOS, JSON.stringify(dados, null, 2));
+    return true;
   } catch (err) {
-    res.status(500).json({ sucesso: false, mensagem: err.message });
+    console.error('Erro ao salvar dados:', err);
+    return false;
+  }
+}
+
+// ==============================================
+// ROTAS DE AUTENTICAÇÃO
+// ==============================================
+app.post('/api/login', (req, res) => {
+  const { usuario, senha } = req.body;
+  const dados = lerDados();
+  const usuarioEncontrado = dados.usuarios.find(
+    u => u.usuario === usuario && u.senha === senha
+  );
+  
+  if (usuarioEncontrado) {
+    res.json({ sucesso: true, tipo: usuarioEncontrado.tipo });
+  } else {
+    res.json({ sucesso: false, mensagem: 'Usuário ou senha incorretos' });
   }
 });
 
-app.get('/api/membros', async (req, res) => {
-  try {
-    const resultado = await pool.query('SELECT * FROM membros WHERE ativo = true ORDER BY nome');
-    res.json(resultado.rows);
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
+// ==============================================
+// ROTAS DE MEMBROS
+// ==============================================
+app.get('/api/membros', (req, res) => {
+  const dados = lerDados();
+  res.json(dados.membros.filter(m => m.ativo !== false));
+});
+
+app.post('/api/membros', (req, res) => {
+  const dados = lerDados();
+  const novo = { id: Date.now(), ...req.body, ativo: true };
+  dados.membros.push(novo);
+  salvarDados(dados);
+  res.json(novo);
+});
+
+app.put('/api/membros/:id', (req, res) => {
+  const dados = lerDados();
+  const id = parseInt(req.params.id);
+  const idx = dados.membros.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    dados.membros[idx] = { ...dados.membros[idx], ...req.body };
+    salvarDados(dados);
+    res.json(dados.membros[idx]);
+  } else {
+    res.status(404).json({ erro: 'Não encontrado' });
   }
 });
 
-app.post('/api/membros', async (req, res) => {
-  try {
-    const { nome, funcao } = req.body;
-    const resultado = await pool.query(
-      'INSERT INTO membros (nome, funcao) VALUES ($1, $2) RETURNING *',
-      [nome, funcao]
-    );
-    res.json(resultado.rows[0]);
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
-});
-
-app.put('/api/membros/:id', async (req, res) => {
-  try {
-    const { nome, funcao } = req.body;
-    const resultado = await pool.query(
-      'UPDATE membros SET nome = $1, funcao = $2 WHERE id = $3 RETURNING *',
-      [nome, funcao, req.params.id]
-    );
-    res.json(resultado.rows[0]);
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
-});
-
-app.delete('/api/membros/:id', async (req, res) => {
-  try {
-    await pool.query('UPDATE membros SET ativo = false WHERE id = $1', [req.params.id]);
+app.delete('/api/membros/:id', (req, res) => {
+  const dados = lerDados();
+  const id = parseInt(req.params.id);
+  const idx = dados.membros.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    dados.membros[idx].ativo = false;
+    salvarDados(dados);
     res.json({ sucesso: true });
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
+  } else {
+    res.status(404).json({ erro: 'Não encontrado' });
   }
 });
 
-app.get('/api/escala', async (req, res) => {
-  try {
-    const escala = await pool.query('SELECT * FROM escalas ORDER BY id DESC LIMIT 1');
-    if (escala.rows.length === 0) return res.json(null);
-    
-    const escalaAtual = escala.rows[0];
-    const membrosEscala = await pool.query(`
-      SELECT em.*, m.nome, m.funcao 
-      FROM escala_membros em 
-      JOIN membros m ON em.membro_id = m.id 
-      WHERE em.escala_id = $1
-    `, [escalaAtual.id]);
-    
-    const musicasEscala = await pool.query(`
-      SELECT emu.material_id, m.nome, m.link, m.status 
-      FROM escalas_musicas emu
-      JOIN materiais m ON emu.material_id = m.id
-      WHERE emu.escala_id = $1
-    `, [escalaAtual.id]);
-    
-    res.json({
-      ...escalaAtual,
-      membros: membrosEscala.rows,
-      musicas: musicasEscala.rows
+// ==============================================
+// ROTAS DE ESCALA
+// ==============================================
+app.get('/api/escala', (req, res) => {
+  const dados = lerDados();
+  if (dados.escalas.length === 0) return res.json(null);
+  
+  const escalaAtual = dados.escalas[dados.escalas.length - 1];
+  const membrosEscala = dados.escala_membros.filter(
+    em => em.escala_id === escalaAtual.id
+  ).map(em => {
+    const membro = dados.membros.find(m => m.id === em.membro_id);
+    return { ...em, nome: membro?.nome, funcao: membro?.funcao };
+  });
+  
+  const musicasEscala = dados.escalas_musicas.filter(
+    em => em.escala_id === escalaAtual.id
+  ).map(em => {
+    const mat = dados.materiais.find(m => m.id === em.material_id);
+    return { material_id: em.material_id, ...mat };
+  });
+  
+  res.json({
+    ...escalaAtual,
+    membros: membrosEscala,
+    musicas: musicasEscala
+  });
+});
+
+app.post('/api/escala', (req, res) => {
+  const dados = lerDados();
+  const { data, observacoes, membros, musicas } = req.body;
+  
+  const novaEscala = {
+    id: Date.now(),
+    data,
+    observacoes,
+    criado_em: new Date().toISOString()
+  };
+  dados.escalas.push(novaEscala);
+  
+  membros?.forEach(m => {
+    dados.escala_membros.push({
+      id: Date.now() + Math.random(),
+      escala_id: novaEscala.id,
+      membro_id: m.membro_id,
+      status: m.status || 'pendente',
+      funcao_na_escala: m.funcao_na_escala || m.funcao
     });
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
+  });
+  
+  musicas?.forEach(mid => {
+    dados.escalas_musicas.push({
+      id: Date.now() + Math.random(),
+      escala_id: novaEscala.id,
+      material_id: mid
+    });
+  });
+  
+  salvarDados(dados);
+  res.json({ sucesso: true, escalaId: novaEscala.id });
 });
 
-app.post('/api/escala', async (req, res) => {
-  try {
-    const { data, observacoes, membros, musicas } = req.body;
-    
-    const escalaResult = await pool.query(
-      'INSERT INTO escalas (data, observacoes) VALUES ($1, $2) RETURNING *',
-      [data, observacoes]
-    );
-    const escalaId = escalaResult.rows[0].id;
-    
-    for (const m of membros || []) {
-      await pool.query(
-        'INSERT INTO escala_membros (escala_id, membro_id, status, funcao_na_escala) VALUES ($1, $2, $3, $4)',
-        [escalaId, m.membro_id, m.status || 'pendente', m.funcao_na_escala || m.funcao]
-      );
-    }
-    
-    for (const mid of musicas || []) {
-      await pool.query(
-        'INSERT INTO escalas_musicas (escala_id, material_id) VALUES ($1, $2)',
-        [escalaId, mid]
-      );
-    }
-    
-    res.json({ sucesso: true, escalaId });
-  } catch (err) {
-    res.status(500).json({ sucesso: false, erro: err.message });
-  }
-});
-
-app.patch('/api/escala/:escalaId/membro/:membroId/status', async (req, res) => {
-  try {
-    const { status } = req.body;
-    await pool.query(
-      'UPDATE escala_membros SET status = $1 WHERE escala_id = $2 AND membro_id = $3',
-      [status, req.params.escalaId, req.params.membroId]
-    );
+app.patch('/api/escala/:escalaId/membro/:membroId/status', (req, res) => {
+  const dados = lerDados();
+  const { escalaId, membroId } = req.params;
+  const { status } = req.body;
+  
+  const item = dados.escala_membros.find(
+    em => em.escala_id === parseInt(escalaId) && em.membro_id === parseInt(membroId)
+  );
+  if (item) {
+    item.status = status;
+    salvarDados(dados);
     res.json({ sucesso: true });
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
+  } else {
+    res.status(404).json({ erro: 'Não encontrado' });
   }
 });
 
-app.get('/api/materiais', async (req, res) => {
-  try {
-    const resultado = await pool.query('SELECT * FROM materiais WHERE ativo = true ORDER BY nome');
-    res.json(resultado.rows);
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
+// ==============================================
+// ROTAS DE MATERIAIS / MÚSICAS
+// ==============================================
+app.get('/api/materiais', (req, res) => {
+  const dados = lerDados();
+  res.json(dados.materiais.filter(m => m.ativo !== false));
+});
+
+app.post('/api/materiais', (req, res) => {
+  const dados = lerDados();
+  const novo = { id: Date.now(), ...req.body, ativo: true };
+  dados.materiais.push(novo);
+  salvarDados(dados);
+  res.json(novo);
+});
+
+app.put('/api/materiais/:id', (req, res) => {
+  const dados = lerDados();
+  const id = parseInt(req.params.id);
+  const idx = dados.materiais.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    dados.materiais[idx] = { ...dados.materiais[idx], ...req.body };
+    salvarDados(dados);
+    res.json(dados.materiais[idx]);
+  } else {
+    res.status(404).json({ erro: 'Não encontrado' });
   }
 });
 
-app.post('/api/materiais', async (req, res) => {
-  try {
-    const { nome, link, status } = req.body;
-    const resultado = await pool.query(
-      'INSERT INTO materiais (nome, link, status) VALUES ($1, $2, $3) RETURNING *',
-      [nome, link, status || 'nao_ensaiada']
-    );
-    res.json(resultado.rows[0]);
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
-});
-
-app.put('/api/materiais/:id', async (req, res) => {
-  try {
-    const { nome, link, status } = req.body;
-    const resultado = await pool.query(
-      'UPDATE materiais SET nome = $1, link = $2, status = $3 WHERE id = $4 RETURNING *',
-      [nome, link, status, req.params.id]
-    );
-    res.json(resultado.rows[0]);
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
-});
-
-app.delete('/api/materiais/:id', async (req, res) => {
-  try {
-    await pool.query('UPDATE materiais SET ativo = false WHERE id = $1', [req.params.id]);
+app.delete('/api/materiais/:id', (req, res) => {
+  const dados = lerDados();
+  const id = parseInt(req.params.id);
+  const idx = dados.materiais.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    dados.materiais[idx].ativo = false;
+    salvarDados(dados);
     res.json({ sucesso: true });
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
+  } else {
+    res.status(404).json({ erro: 'Não encontrado' });
   }
 });
 
+// ==============================================
+// PÁGINA PRINCIPAL
+// ==============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-async function iniciarServidor() {
-  try {
-    await inicializarBanco();
-    app.listen(PORTA, () => {
-      console.log(`🚀 Servidor rodando na porta ${PORTA}`);
-    });
-  } catch (err) {
-    console.error('❌ Falha:', err.message);
-    process.exit(1);
-  }
-}
-
-iniciarServidor();
+// ==============================================
+// INICIAR SERVIDOR
+// ==============================================
+app.listen(PORTA, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORTA}`);
+  console.log(`✅ Sistema pronto!`);
+  console.log(`🔑 Líder: lider / 1234`);
+  console.log(`🔑 Membro: membro / 1234`);
+});
