@@ -1,11 +1,18 @@
 const express = require('express');
+const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const PORTA = process.env.PORT || 3000;
-const ARQUIVO_DADOS = './dados.json';
+
+// ==============================================
+// CONEXÃO COM O BANCO DE DADOS SUPABASE
+// ==============================================
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'COLA_AQUI_A_SUA_STRING_DE_CONEXAO',
+  ssl: { rejectUnauthorized: false }
+});
 
 // ==============================================
 // CONFIGURAÇÕES
@@ -15,237 +22,161 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
 // ==============================================
-// GERENCIAR DADOS
+// TESTE DE CONEXÃO
 // ==============================================
-function lerDados() {
-  try {
-    if (!fs.existsSync(ARQUIVO_DADOS)) {
-      return {
-        usuarios: [
-          { usuario: 'lider', senha: '1234', tipo: 'lider' },
-          { usuario: 'membro', senha: '1234', tipo: 'membro' }
-        ],
-        membros: [],
-        escalas: [],
-        escala_membros: [],
-        materiais: [],
-        escalas_musicas: []
-      };
-    }
-    const texto = fs.readFileSync(ARQUIVO_DADOS, 'utf8');
-    return JSON.parse(texto);
-  } catch (err) {
-    console.error('Erro ao ler dados:', err);
-    return {
-      usuarios: [
-        { usuario: 'lider', senha: '1234', tipo: 'lider' },
-        { usuario: 'membro', senha: '1234', tipo: 'membro' }
-      ],
-      membros: [],
-      escalas: [],
-      escala_membros: [],
-      materiais: [],
-      escalas_musicas: []
-    };
+pool.connect((err) => {
+  if (err) {
+    console.error('❌ ERRO ao conectar no banco:', err.message);
+  } else {
+    console.log('✅ Conectado ao banco de dados com sucesso!');
   }
-}
-
-function salvarDados(dados) {
-  try {
-    fs.writeFileSync(ARQUIVO_DADOS, JSON.stringify(dados, null, 2));
-    return true;
-  } catch (err) {
-    console.error('Erro ao salvar dados:', err);
-    return false;
-  }
-}
+});
 
 // ==============================================
-// ROTAS DE AUTENTICAÇÃO
+// LOGIN
 // ==============================================
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { usuario, senha } = req.body;
-  const dados = lerDados();
-  const usuarioEncontrado = dados.usuarios.find(
-    u => u.usuario === usuario && u.senha === senha
-  );
-  
-  if (usuarioEncontrado) {
-    res.json({ sucesso: true, tipo: usuarioEncontrado.tipo });
-  } else {
-    res.json({ sucesso: false, mensagem: 'Usuário ou senha incorretos' });
+  try {
+    const resultado = await pool.query(
+      'SELECT * FROM usuarios WHERE usuario = $1 AND senha = $2',
+      [usuario, senha]
+    );
+    if (resultado.rows.length === 1) {
+      res.json({
+        sucesso: true,
+        usuario: resultado.rows[0].usuario,
+        nivel: resultado.rows[0].nivel
+      });
+    } else {
+      res.json({ sucesso: false, mensagem: 'Usuário ou senha incorretos' });
+    }
+  } catch (erro) {
+    res.json({ sucesso: false, mensagem: 'Erro no servidor: ' + erro.message });
   }
 });
 
 // ==============================================
-// ROTAS DE MEMBROS
+// ESCALA
 // ==============================================
-app.get('/api/membros', (req, res) => {
-  const dados = lerDados();
-  res.json(dados.membros.filter(m => m.ativo !== false));
-});
-
-app.post('/api/membros', (req, res) => {
-  const dados = lerDados();
-  const novo = { id: Date.now(), ...req.body, ativo: true };
-  dados.membros.push(novo);
-  salvarDados(dados);
-  res.json(novo);
-});
-
-app.put('/api/membros/:id', (req, res) => {
-  const dados = lerDados();
-  const id = parseInt(req.params.id);
-  const idx = dados.membros.findIndex(m => m.id === id);
-  if (idx !== -1) {
-    dados.membros[idx] = { ...dados.membros[idx], ...req.body };
-    salvarDados(dados);
-    res.json(dados.membros[idx]);
-  } else {
-    res.status(404).json({ erro: 'Não encontrado' });
+app.get('/api/escala', async (req, res) => {
+  try {
+    const resultado = await pool.query('SELECT * FROM escala WHERE id = 1');
+    if (resultado.rows.length === 0) {
+      return res.json({});
+    }
+    res.json(resultado.rows[0]);
+  } catch (erro) {
+    res.json({ erro: erro.message });
   }
 });
 
-app.delete('/api/membros/:id', (req, res) => {
-  const dados = lerDados();
-  const id = parseInt(req.params.id);
-  const idx = dados.membros.findIndex(m => m.id === id);
-  if (idx !== -1) {
-    dados.membros[idx].ativo = false;
-    salvarDados(dados);
+app.post('/api/escala', async (req, res) => {
+  const dados = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO escala (
+        id, dataExibicao, "local", teclado, guitarra, contrabaixo, violao, bateria,
+        ministro, backvocal, vocal, lider, statusTeclado, statusGuitarra,
+        statusContrabaixo, statusViolao, statusBateria, statusMinistro,
+        statusBackvocal, statusVocal, statusLider, cultoMusicas
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+      ON CONFLICT (id) DO UPDATE SET
+        dataExibicao = $2, "local" = $3, teclado = $4, guitarra = $5, contrabaixo = $6,
+        violao = $7, bateria = $8, ministro = $9, backvocal = $10, vocal = $11,
+        lider = $12, statusTeclado = $13, statusGuitarra = $14, statusContrabaixo = $15,
+        statusViolao = $16, statusBateria = $17, statusMinistro = $18,
+        statusBackvocal = $19, statusVocal = $20, statusLider = $21, cultoMusicas = $22
+    `, [
+      1, dados.dataExibicao, dados.local, dados.teclado, dados.guitarra,
+      dados.contrabaixo, dados.violao, dados.bateria, dados.ministro,
+      dados.backvocal, dados.vocal, dados.lider, dados.statusTeclado,
+      dados.statusGuitarra, dados.statusContrabaixo, dados.statusViolao,
+      dados.statusBateria, dados.statusMinistro, dados.statusBackvocal,
+      dados.statusVocal, dados.statusLider, JSON.stringify(dados.cultoMusicas || [])
+    ]);
     res.json({ sucesso: true });
-  } else {
-    res.status(404).json({ erro: 'Não encontrado' });
+  } catch (erro) {
+    res.json({ sucesso: false, erro: erro.message });
   }
 });
 
 // ==============================================
-// ROTAS DE ESCALA
+// EQUIPE
 // ==============================================
-app.get('/api/escala', (req, res) => {
-  const dados = lerDados();
-  if (dados.escalas.length === 0) return res.json(null);
-  
-  const escalaAtual = dados.escalas[dados.escalas.length - 1];
-  const membrosEscala = dados.escala_membros.filter(
-    em => em.escala_id === escalaAtual.id
-  ).map(em => {
-    const membro = dados.membros.find(m => m.id === em.membro_id);
-    return { ...em, nome: membro?.nome, funcao: membro?.funcao };
-  });
-  
-  const musicasEscala = dados.escalas_musicas.filter(
-    em => em.escala_id === escalaAtual.id
-  ).map(em => {
-    const mat = dados.materiais.find(m => m.id === em.material_id);
-    return { material_id: em.material_id, ...mat };
-  });
-  
-  res.json({
-    ...escalaAtual,
-    membros: membrosEscala,
-    musicas: musicasEscala
-  });
+app.get('/api/equipe', async (req, res) => {
+  try {
+    const resultado = await pool.query('SELECT * FROM equipe ORDER BY id');
+    res.json(resultado.rows);
+  } catch (erro) {
+    res.json([]);
+  }
 });
 
-app.post('/api/escala', (req, res) => {
-  const dados = lerDados();
-  const { data, observacoes, membros, musicas } = req.body;
-  
-  const novaEscala = {
-    id: Date.now(),
-    data,
-    observacoes,
-    criado_em: new Date().toISOString()
-  };
-  dados.escalas.push(novaEscala);
-  
-  membros?.forEach(m => {
-    dados.escala_membros.push({
-      id: Date.now() + Math.random(),
-      escala_id: novaEscala.id,
-      membro_id: m.membro_id,
-      status: m.status || 'pendente',
-      funcao_na_escala: m.funcao_na_escala || m.funcao
-    });
-  });
-  
-  musicas?.forEach(mid => {
-    dados.escalas_musicas.push({
-      id: Date.now() + Math.random(),
-      escala_id: novaEscala.id,
-      material_id: mid
-    });
-  });
-  
-  salvarDados(dados);
-  res.json({ sucesso: true, escalaId: novaEscala.id });
-});
-
-app.patch('/api/escala/:escalaId/membro/:membroId/status', (req, res) => {
-  const dados = lerDados();
-  const { escalaId, membroId } = req.params;
-  const { status } = req.body;
-  
-  const item = dados.escala_membros.find(
-    em => em.escala_id === parseInt(escalaId) && em.membro_id === parseInt(membroId)
-  );
-  if (item) {
-    item.status = status;
-    salvarDados(dados);
+app.post('/api/equipe', async (req, res) => {
+  const { nome, funcao } = req.body;
+  try {
+    await pool.query('INSERT INTO equipe (nome, funcao) VALUES ($1, $2)', [nome, funcao]);
     res.json({ sucesso: true });
-  } else {
-    res.status(404).json({ erro: 'Não encontrado' });
+  } catch (erro) {
+    res.json({ sucesso: false, erro: erro.message });
   }
 });
 
-// ==============================================
-// ROTAS DE MATERIAIS / MÚSICAS
-// ==============================================
-app.get('/api/materiais', (req, res) => {
-  const dados = lerDados();
-  res.json(dados.materiais.filter(m => m.ativo !== false));
-});
-
-app.post('/api/materiais', (req, res) => {
-  const dados = lerDados();
-  const novo = { id: Date.now(), ...req.body, ativo: true };
-  dados.materiais.push(novo);
-  salvarDados(dados);
-  res.json(novo);
-});
-
-app.put('/api/materiais/:id', (req, res) => {
-  const dados = lerDados();
-  const id = parseInt(req.params.id);
-  const idx = dados.materiais.findIndex(m => m.id === id);
-  if (idx !== -1) {
-    dados.materiais[idx] = { ...dados.materiais[idx], ...req.body };
-    salvarDados(dados);
-    res.json(dados.materiais[idx]);
-  } else {
-    res.status(404).json({ erro: 'Não encontrado' });
-  }
-});
-
-app.delete('/api/materiais/:id', (req, res) => {
-  const dados = lerDados();
-  const id = parseInt(req.params.id);
-  const idx = dados.materiais.findIndex(m => m.id === id);
-  if (idx !== -1) {
-    dados.materiais[idx].ativo = false;
-    salvarDados(dados);
+app.delete('/api/equipe/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM equipe WHERE id = $1', [req.params.id]);
     res.json({ sucesso: true });
-  } else {
-    res.status(404).json({ erro: 'Não encontrado' });
+  } catch (erro) {
+    res.json({ sucesso: false });
   }
 });
 
 // ==============================================
-// PÁGINA PRINCIPAL
+// REPERTÓRIO / MATERIAIS
 // ==============================================
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+app.get('/api/repertorio', async (req, res) => {
+  try {
+    const resultado = await pool.query('SELECT * FROM repertorio ORDER BY id');
+    res.json(resultado.rows);
+  } catch (erro) {
+    res.json([]);
+  }
+});
+
+app.post('/api/repertorio', async (req, res) => {
+  const { nome, link, ensaiada } = req.body;
+  try {
+    await pool.query(
+      'INSERT INTO repertorio (nome, link, ensaiada) VALUES ($1, $2, $3)',
+      [nome, link, ensaiada || 0]
+    );
+    res.json({ sucesso: true });
+  } catch (erro) {
+    res.json({ sucesso: false });
+  }
+});
+
+app.put('/api/repertorio/:id', async (req, res) => {
+  const { ensaiada } = req.body;
+  try {
+    await pool.query(
+      'UPDATE repertorio SET ensaiada = $1 WHERE id = $2',
+      [ensaiada, req.params.id]
+    );
+    res.json({ sucesso: true });
+  } catch (erro) {
+    res.json({ sucesso: false });
+  }
+});
+
+app.delete('/api/repertorio/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM repertorio WHERE id = $1', [req.params.id]);
+    res.json({ sucesso: true });
+  } catch (erro) {
+    res.json({ sucesso: false });
+  }
 });
 
 // ==============================================
@@ -253,7 +184,4 @@ app.get('/', (req, res) => {
 // ==============================================
 app.listen(PORTA, () => {
   console.log(`🚀 Servidor rodando na porta ${PORTA}`);
-  console.log(`✅ Sistema pronto!`);
-  console.log(`🔑 Líder: lider / 1234`);
-  console.log(`🔑 Membro: membro / 1234`);
 });
