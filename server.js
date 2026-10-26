@@ -7,10 +7,10 @@ const app = express();
 const PORTA = process.env.PORT || 3000;
 
 // ==============================================
-// CONEXÃO COM O SUPABASE
+// CONEXÃO — usando os nomes que JÁ estão no Render ✅
 // ==============================================
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, '.')));
 app.post('/api/login', async (req, res) => {
   const { usuario, senha } = req.body;
   try {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('usuarios')
       .select('*')
       .eq('usuario', usuario)
