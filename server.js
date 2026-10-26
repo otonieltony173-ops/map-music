@@ -7,7 +7,7 @@ const app = express();
 const PORTA = process.env.PORT || 3000;
 
 // ==============================================
-// CONEXÃO — PELAS VARIÁVEIS DE AMBIENTE
+// CONEXÃO
 // ==============================================
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -63,7 +63,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==============================================
-// ESCALA — CORRIGIDO com nomes corretos das colunas
+// ESCALA — FINAL com nomes corretos da tabela
 // ==============================================
 app.get('/api/escala', async (req, res) => {
   try {
@@ -92,16 +92,16 @@ app.post('/api/escala', async (req, res) => {
       .upsert({
         id: 1,
         dataexibicao: dados.dataExibicao || null,
-        Local: dados.local || null,
+        "Local": dados.local || null,
         teclado: dados.teclado || null,
         guitarra: dados.guitarra || null,
         contrabaixo: dados.contrabaixo || null,
         violao: dados.violao || null,
         bateria: dados.bateria || null,
-        ministro: dados.ministro || null,
-        backvocal: dados.backvocal || null,
-        vocal: dados.vocal || null,
-        lider: dados.lider || null,
+        Ministro: dados.ministro || null,
+        Backvocal: dados.backvocal || null,
+        Vocal: dados.vocal || null,
+        Lider: dados.lider || null,
         statusteclado: dados.statusTeclado || 'disponivel',
         statusguitarra: dados.statusGuitarra || 'disponivel',
         statuscontrabaixo: dados.statusContrabaixo || 'disponivel',
