@@ -63,7 +63,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==============================================
-// ESCALA — CORRIGIDO
+// ESCALA — CORRIGIDO com nomes corretos das colunas
 // ==============================================
 app.get('/api/escala', async (req, res) => {
   try {
@@ -91,8 +91,8 @@ app.post('/api/escala', async (req, res) => {
       .from('escala')
       .upsert({
         id: 1,
-        dataExibicao: dados.dataExibicao || null,
-        local: dados.local || null,
+        dataexibicao: dados.dataExibicao || null,
+        Local: dados.local || null,
         teclado: dados.teclado || null,
         guitarra: dados.guitarra || null,
         contrabaixo: dados.contrabaixo || null,
@@ -102,16 +102,16 @@ app.post('/api/escala', async (req, res) => {
         backvocal: dados.backvocal || null,
         vocal: dados.vocal || null,
         lider: dados.lider || null,
-        statusTeclado: dados.statusTeclado || 'disponivel',
-        statusGuitarra: dados.statusGuitarra || 'disponivel',
-        statusContrabaixo: dados.statusContrabaixo || 'disponivel',
-        statusViolao: dados.statusViolao || 'disponivel',
-        statusBateria: dados.statusBateria || 'disponivel',
-        statusMinistro: dados.statusMinistro || 'disponivel',
-        statusBackvocal: dados.statusBackvocal || 'disponivel',
-        statusVocal: dados.statusVocal || 'disponivel',
-        statusLider: dados.statusLider || 'disponivel',
-        cultoMusicas: dados.cultoMusicas || []
+        statusteclado: dados.statusTeclado || 'disponivel',
+        statusguitarra: dados.statusGuitarra || 'disponivel',
+        statuscontrabaixo: dados.statusContrabaixo || 'disponivel',
+        statusviolao: dados.statusViolao || 'disponivel',
+        statusbateria: dados.statusBateria || 'disponivel',
+        statusministro: dados.statusMinistro || 'disponivel',
+        statusbackvocal: dados.statusBackvocal || 'disponivel',
+        statusvocal: dados.statusVocal || 'disponivel',
+        statuslider: dados.statusLider || 'disponivel',
+        cultomusicas: dados.cultoMusicas || []
       }, { onConflict: 'id' });
 
     if (error) {
