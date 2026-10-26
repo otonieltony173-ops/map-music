@@ -63,7 +63,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==============================================
-// ESCALA
+// ESCALA — CORRIGIDO
 // ==============================================
 app.get('/api/escala', async (req, res) => {
   try {
@@ -71,44 +71,56 @@ app.get('/api/escala', async (req, res) => {
       .from('escala')
       .select('*')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code === 'PGRST116') return res.json({});
-    res.json(data || {});
-  } catch {
-    res.json({});
+    if (error) {
+      console.log('Erro ao carregar escala:', error);
+      return res.json({});
+    }
+    res.json(data || { id: 1 });
+  } catch (erro) {
+    console.log('Exceção ao carregar escala:', erro);
+    res.json({ id: 1 });
   }
 });
 
 app.post('/api/escala', async (req, res) => {
   const dados = req.body;
   try {
-    const { error } = await supabase.from('escala').upsert({
-      id: 1,
-      dataExibicao: dados.dataExibicao,
-      local: dados.local,
-      teclado: dados.teclado,
-      guitarra: dados.guitarra,
-      contrabaixo: dados.contrabaixo,
-      violao: dados.violao,
-      bateria: dados.bateria,
-      ministro: dados.ministro,
-      backvocal: dados.backvocal,
-      vocal: dados.vocal,
-      lider: dados.lider,
-      statusTeclado: dados.statusTeclado,
-      statusGuitarra: dados.statusGuitarra,
-      statusContrabaixo: dados.statusContrabaixo,
-      statusViolao: dados.statusViolao,
-      statusBateria: dados.statusBateria,
-      statusMinistro: dados.statusMinistro,
-      statusBackvocal: dados.statusBackvocal,
-      statusVocal: dados.statusVocal,
-      statusLider: dados.statusLider,
-      cultoMusicas: dados.cultoMusicas || []
-    });
-    res.json(error ? { sucesso: false } : { sucesso: true });
-  } catch {
+    const { data, error } = await supabase
+      .from('escala')
+      .upsert({
+        id: 1,
+        dataExibicao: dados.dataExibicao || null,
+        local: dados.local || null,
+        teclado: dados.teclado || null,
+        guitarra: dados.guitarra || null,
+        contrabaixo: dados.contrabaixo || null,
+        violao: dados.violao || null,
+        bateria: dados.bateria || null,
+        ministro: dados.ministro || null,
+        backvocal: dados.backvocal || null,
+        vocal: dados.vocal || null,
+        lider: dados.lider || null,
+        statusTeclado: dados.statusTeclado || 'disponivel',
+        statusGuitarra: dados.statusGuitarra || 'disponivel',
+        statusContrabaixo: dados.statusContrabaixo || 'disponivel',
+        statusViolao: dados.statusViolao || 'disponivel',
+        statusBateria: dados.statusBateria || 'disponivel',
+        statusMinistro: dados.statusMinistro || 'disponivel',
+        statusBackvocal: dados.statusBackvocal || 'disponivel',
+        statusVocal: dados.statusVocal || 'disponivel',
+        statusLider: dados.statusLider || 'disponivel',
+        cultoMusicas: dados.cultoMusicas || []
+      }, { onConflict: 'id' });
+
+    if (error) {
+      console.log('Erro ao salvar escala:', error);
+      return res.json({ sucesso: false, erro: error.message });
+    }
+    res.json({ sucesso: true, mensagem: 'Escala salva com sucesso!' });
+  } catch (erro) {
+    console.log('Exceção ao salvar escala:', erro);
     res.json({ sucesso: false });
   }
 });
