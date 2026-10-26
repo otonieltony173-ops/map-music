@@ -63,7 +63,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==============================================
-// ESCALA — FINAL com nomes corretos da tabela
+// ESCALA — FINAL traduzindo nomes do index para o banco
 // ==============================================
 app.get('/api/escala', async (req, res) => {
   try {
@@ -77,7 +77,36 @@ app.get('/api/escala', async (req, res) => {
       console.log('Erro ao carregar escala:', error);
       return res.json({});
     }
-    res.json(data || { id: 1 });
+    
+    // Converte nomes do banco para nomes que o index espera
+    if (data) {
+      res.json({
+        id: data.id,
+        dataExibicao: data.dataexibicao,
+        local: data.Local,
+        teclado: data.teclado,
+        guitarra: data.guitarra,
+        contrabaixo: data.contrabaixo,
+        violao: data.violao,
+        bateria: data.bateria,
+        ministro: data.Ministro,
+        backvocal: data.Backvocal,
+        vocal: data.Vocal,
+        lider: data.Lider,
+        statusTeclado: data.statusteclado || 'pendente',
+        statusGuitarra: data.statusguitarra || 'pendente',
+        statusContrabaixo: data.statuscontrabaixo || 'pendente',
+        statusViolao: data.statusviolao || 'pendente',
+        statusBateria: data.statusbateria || 'pendente',
+        statusMinistro: data.statusministro || 'pendente',
+        statusBackvocal: data.statusbackvocal || 'pendente',
+        statusVocal: data.statusvocal || 'pendente',
+        statusLider: data.statuslider || 'pendente',
+        cultoMusicas: data.cultomusicas || []
+      });
+    } else {
+      res.json({ id: 1 });
+    }
   } catch (erro) {
     console.log('Exceção ao carregar escala:', erro);
     res.json({ id: 1 });
@@ -102,15 +131,15 @@ app.post('/api/escala', async (req, res) => {
         Backvocal: dados.backvocal || null,
         Vocal: dados.vocal || null,
         Lider: dados.lider || null,
-        statusteclado: dados.statusTeclado || 'disponivel',
-        statusguitarra: dados.statusGuitarra || 'disponivel',
-        statuscontrabaixo: dados.statusContrabaixo || 'disponivel',
-        statusviolao: dados.statusViolao || 'disponivel',
-        statusbateria: dados.statusBateria || 'disponivel',
-        statusministro: dados.statusMinistro || 'disponivel',
-        statusbackvocal: dados.statusBackvocal || 'disponivel',
-        statusvocal: dados.statusVocal || 'disponivel',
-        statuslider: dados.statusLider || 'disponivel',
+        statusteclado: dados.statusTeclado || 'pendente',
+        statusguitarra: dados.statusGuitarra || 'pendente',
+        statuscontrabaixo: dados.statusContrabaixo || 'pendente',
+        statusviolao: dados.statusViolao || 'pendente',
+        statusbateria: dados.statusBateria || 'pendente',
+        statusministro: dados.statusMinistro || 'pendente',
+        statusbackvocal: dados.statusBackvocal || 'pendente',
+        statusvocal: dados.statusVocal || 'pendente',
+        statuslider: dados.statusLider || 'pendente',
         cultomusicas: dados.cultoMusicas || []
       }, { onConflict: 'id' });
 
