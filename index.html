@@ -69,7 +69,6 @@ a { color: var(--secundaria); text-decoration: none; }
 </style>
 </head>
 <body>
-
 <div id="tela-login" class="login-tela">
   <div class="login-container">
     <div class="login-logo">🎵</div>
@@ -101,7 +100,6 @@ a { color: var(--secundaria); text-decoration: none; }
     <button class="btn nav-btn" onclick="aba('materiais')">🎶 Materiais</button>
   </nav>
 
-  <!-- ESCALA -->
   <div id="escala" class="aba-conteudo">
     <div class="card">
       <h3>📅 Dados da Escala</h3>
@@ -146,6 +144,11 @@ a { color: var(--secundaria); text-decoration: none; }
           <div class="escala-status"><button class="btn status-btn status-pendente" id="s_bateria" onclick="sts('bateria')">⏳</button></div>
         </div>
         <div class="escala-item">
+          <div class="escala-instrumento">📽️ Projeção</div>
+          <div class="escala-input-name"><input type="text" id="i_projecao"></div>
+          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_projecao" onclick="sts('projecao')">⏳</button></div>
+        </div>
+        <div class="escala-item">
           <div class="escala-instrumento">🎤 Ministro</div>
           <div class="escala-input-name"><input type="text" id="i_ministro"></div>
           <div class="escala-status"><button class="btn status-btn status-pendente" id="s_ministro" onclick="sts('ministro')">⏳</button></div>
@@ -168,7 +171,6 @@ a { color: var(--secundaria); text-decoration: none; }
       </div>
     </div>
 
-    <!-- REPERTÓRIO DO CULTO - VISÍVEL PARA TODOS TESTAR -->
     <div class="card" id="bloco-culto-musicas">
       <h3>📂 Repertório do Culto</h3>
       <div id="form-culto-musica">
@@ -183,14 +185,12 @@ a { color: var(--secundaria); text-decoration: none; }
       </ul>
     </div>
 
-    <!-- BOTÕES - AGORA APARECENDO FIXO AQUI -->
     <div class="botoes-fixos" id="area-botoes-principais">
       <button class="btn btn-primario" id="btn-salvar-total" onclick="salvar()">💾 Salvar Escala</button>
       <button class="btn btn-whatsapp" id="btn-whatsapp-total" onclick="enviarWpp()">📱 Enviar pelo WhatsApp</button>
     </div>
   </div>
 
-  <!-- EQUIPE -->
   <div id="equipe" class="aba-conteudo oculto">
     <div class="card" id="bloco-add-membro">
       <h3>➕ Adicionar Membro</h3>
@@ -206,6 +206,7 @@ a { color: var(--secundaria); text-decoration: none; }
             <option value="violao">Violão</option>
             <option value="contrabaixo">Contrabaixo</option>
             <option value="bateria">Bateria</option>
+            <option value="projecao">Projeção</option>
             <option value="lider">Líder</option>
           </select>
         </div>
@@ -218,7 +219,6 @@ a { color: var(--secundaria); text-decoration: none; }
     </div>
   </div>
 
-  <!-- MATERIAIS -->
   <div id="materiais" class="aba-conteudo oculto">
     <div class="card" id="bloco-add-musica">
       <h3>🎶 Adicionar Música</h3>
@@ -235,14 +235,14 @@ a { color: var(--secundaria); text-decoration: none; }
   </div>
 
 </div>
-
 <script>
 let usuario = null;
 let perfil = null;
 let cultosMusicas = [];
 let stsMap = {
   teclado: 'pendente', guitarra: 'pendente', contrabaixo: 'pendente', violao: 'pendente',
-  bateria: 'pendente', ministro: 'pendente', backvocal: 'pendente', vocal: 'pendente', lider: 'pendente'
+  bateria: 'pendente', projecao: 'pendente', ministro: 'pendente',
+  backvocal: 'pendente', vocal: 'pendente', lider: 'pendente'
 };
 
 const cargos = [
@@ -251,25 +251,20 @@ const cargos = [
   {chave:'contrabaixo',nome:'Contrabaixo',icone:'🎻'},
   {chave:'violao',nome:'Violão',icone:'🎸'},
   {chave:'bateria',nome:'Bateria',icone:'🥁'},
+  {chave:'projecao',nome:'Projeção',icone:'📽️'},
   {chave:'ministro',nome:'Ministro',icone:'🎤'},
   {chave:'backvocal',nome:'Back Vocal',icone:'🎤'},
   {chave:'vocal',nome:'Vocal',icone:'🎤'},
   {chave:'lider',nome:'Líder do Dia',icone:'👤'}
 ];
 
-// === PERMISSÕES SIMPLIFICADAS ===
 function aplicarPermissoes() {
   const ehLider = (perfil === 'lider');
-  
-  console.log('Perfil detectado:', perfil, 'É líder?', ehLider); // Para depuração
-
-  // Mostra/esconde formulários e botões
+  console.log('Perfil detectado:', perfil, 'É líder?', ehLider);
   document.getElementById('bloco-culto-musicas').style.display = ehLider ? 'block' : 'none';
   document.getElementById('area-botoes-principais').style.display = ehLider ? 'flex' : 'none';
   document.getElementById('bloco-add-membro').style.display = ehLider ? 'block' : 'none';
   document.getElementById('bloco-add-musica').style.display = ehLider ? 'block' : 'none';
-
-  // Campos editáveis
   document.getElementById('edata').disabled = !ehLider;
   document.getElementById('elocal').disabled = !ehLider;
   cargos.forEach(c => {
@@ -287,9 +282,7 @@ async function entrar() {
     body: JSON.stringify({usuario:u, senha:s})
   });
   const d = await res.json();
-  
-  console.log('Resposta do servidor:', d); // Para ver o que volta
-
+  console.log('Resposta do servidor:', d);
   if (d.sucesso) {
     usuario = d.usuario;
     perfil = d.nivel;
@@ -323,15 +316,58 @@ function aba(nome) {
   if (nome==='materiais') carregarRepertorio();
 }
 
-function sts(cargo) {
+// ✅ SALVA AUTOMATICAMENTE AO MUDAR O STATUS
+async function sts(cargo) {
   const a = stsMap[cargo];
   if (a==='pendente') stsMap[cargo]='confirmado';
   else if (a==='confirmado') stsMap[cargo]='recusado';
   else stsMap[cargo]='pendente';
+  
+  // Atualiza o botão na tela
   const b = document.getElementById(`s_${cargo}`);
   b.className = '';
   b.classList.add('btn','status-btn',`status-${stsMap[cargo]}`);
-  b.textContent = stsMap[cargo]==='confirmado'?'✅':stsMap[cargo]==='recusado'?'❌':'⏳';
+  b.textContent = stsMap[cargo]==='confirmado'?'✅ Disponível':stsMap[cargo]==='recusado'?'❌ Indisponível':'⏳ Pendente';
+
+  // ✅ SALVA NO BANCO AUTOMATICAMENTE
+  if (perfil==='lider') {
+    await salvarApenasStatus();
+  }
+}
+
+// ✅ FUNÇÃO QUE SALVA SÓ OS STATUS SEM PRECISAR SALVAR TUDO
+async function salvarApenasStatus() {
+  const obj = {
+    dataExibicao: document.getElementById('edata').value,
+    local: document.getElementById('elocal').value,
+    cultoMusicas: cultosMusicas,
+    teclado: document.getElementById('i_teclado').value||'',
+    guitarra: document.getElementById('i_guitarra').value||'',
+    contrabaixo: document.getElementById('i_contrabaixo').value||'',
+    violao: document.getElementById('i_violao').value||'',
+    bateria: document.getElementById('i_bateria').value||'',
+    projecao: document.getElementById('i_projecao').value||'',
+    ministro: document.getElementById('i_ministro').value||'',
+    backvocal: document.getElementById('i_backvocal').value||'',
+    vocal: document.getElementById('i_vocal').value||'',
+    lider: document.getElementById('i_lider').value||'',
+    statusTeclado: stsMap.teclado,
+    statusGuitarra: stsMap.guitarra,
+    statusContrabaixo: stsMap.contrabaixo,
+    statusViolao: stsMap.violao,
+    statusBateria: stsMap.bateria,
+    statusProjecao: stsMap.projecao,
+    statusMinistro: stsMap.ministro,
+    statusBackvocal: stsMap.backvocal,
+    statusVocal: stsMap.vocal,
+    statusLider: stsMap.lider
+  };
+
+  await fetch('/api/escala', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(obj)
+  });
 }
 
 async function carregarEscala() {
@@ -351,7 +387,7 @@ async function carregarEscala() {
     if (btn) {
       btn.className = '';
       btn.classList.add('btn','status-btn',`status-${stsMap[c.chave]}`);
-      btn.textContent = stsMap[c.chave]==='confirmado'?'✅':stsMap[c.chave]==='recusado'?'❌':'⏳';
+      btn.textContent = stsMap[c.chave]==='confirmado'?'✅ Disponível':stsMap[c.chave]==='recusado'?'❌ Indisponível':'⏳ Pendente';
     }
   });
   aplicarPermissoes();
@@ -398,15 +434,16 @@ async function salvar() {
     contrabaixo:document.getElementById('i_contrabaixo').value||'',
     violao:document.getElementById('i_violao').value||'',
     bateria:document.getElementById('i_bateria').value||'',
+    projecao:document.getElementById('i_projecao').value||'',
     ministro:document.getElementById('i_ministro').value||'',
     backvocal:document.getElementById('i_backvocal').value||'',
     vocal:document.getElementById('i_vocal').value||'',
     lider:document.getElementById('i_lider').value||'',
     statusTeclado:stsMap.teclado, statusGuitarra:stsMap.guitarra,
     statusContrabaixo:stsMap.contrabaixo, statusViolao:stsMap.violao,
-    statusBateria:stsMap.bateria, statusMinistro:stsMap.ministro,
-    statusBackvocal:stsMap.backvocal, statusVocal:stsMap.vocal,
-    statusLider:stsMap.lider
+    statusBateria:stsMap.bateria, statusProjecao:stsMap.projecao,
+    statusMinistro:stsMap.ministro, statusBackvocal:stsMap.backvocal,
+    statusVocal:stsMap.vocal, statusLider:stsMap.lider
   };
   const res = await fetch('/api/escala', {
     method:'POST', headers:{'Content-Type':'application/json'},
@@ -428,6 +465,7 @@ function enviarWpp() {
     contrabaixo:document.getElementById('i_contrabaixo').value||'',
     violao:document.getElementById('i_violao').value||'',
     bateria:document.getElementById('i_bateria').value||'',
+    projecao:document.getElementById('i_projecao').value||'',
     ministro:document.getElementById('i_ministro').value||'',
     backvocal:document.getElementById('i_backvocal').value||'',
     vocal:document.getElementById('i_vocal').value||'',
@@ -523,9 +561,11 @@ async function delMus(id) {
   if (perfil!=='lider') return;
   if (!confirm('Excluir esta música do repertório?')) return;
   await fetch(`/api/repertorio/${id}`, {method:'DELETE'});
+  carregarRepertorio();
 }
 
 document.getElementById('senha').addEventListener('keypress',e=>{if(e.key==='Enter')entrar();});
 </script>
 
 </body></html>
+ 
