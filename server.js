@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
 // ==============================================
-// LOGIN
+// LOGIN — CONTINUA EXATAMENTE IGUAL ✅
 // ==============================================
 app.post('/api/login', async (req, res) => {
   const { usuario, senha } = req.body;
@@ -45,8 +45,67 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==============================================
-// ESCALA
+// ESCALA — ATUALIZADO com Projeção e várias escalas ✅
 // ==============================================
+
+// PEGAR TODAS AS ESCALAS
+app.get('/api/escalas', async (req, res) => {
+  try {
+    const { data } = await supabase
+      .from('escala')
+      .select('*')
+      .order('dataexibicao', { ascending: true });
+
+    res.json(data || []);
+  } catch {
+    res.json([]);
+  }
+});
+
+// PEGAR UMA ESCALA ESPECÍFICA (mantém compatibilidade)
+app.get('/api/escala/:id', async (req, res) => {
+  try {
+    const { data } = await supabase
+      .from('escala')
+      .select('*')
+      .eq('id', req.params.id)
+      .maybeSingle();
+
+    if (!data) return res.json({ id: parseInt(req.params.id) });
+
+    res.json({
+      id: data.id,
+      titulo: data.titulo || '',
+      dataExibicao: data.dataexibicao,
+      local: data.local,
+      teclado: data.teclado,
+      guitarra: data.guitarra,
+      contrabaixo: data.contrabaixo,
+      violao: data.violao,
+      bateria: data.bateria,
+      projecao: data.projecao,
+      ministro: data.ministro,
+      backvocal: data.backvocal,
+      vocal: data.vocal,
+      lider: data.lider,
+      statusTeclado: data.statusteclado || 'pendente',
+      statusGuitarra: data.statusguitarra || 'pendente',
+      statusContrabaixo: data.statuscontrabaixo || 'pendente',
+      statusViolao: data.statusviolao || 'pendente',
+      statusBateria: data.statusbateria || 'pendente',
+      statusProjecao: data.statusprojecao || 'pendente',
+      statusMinistro: data.statusministro || 'pendente',
+      statusBackvocal: data.statusbackvocal || 'pendente',
+      statusVocal: data.statusvocal || 'pendente',
+      statusLider: data.statuslider || 'pendente',
+      cultoMusicas: data.cultomusicas || []
+    });
+  } catch {
+    res.json({ id: parseInt(req.params.id) });
+  }
+});
+
+// MANTER COMPATIBILIDADE — rota antiga continua funcionando
 app.get('/api/escala', async (req, res) => {
   try {
     const { data } = await supabase
@@ -59,6 +118,7 @@ app.get('/api/escala', async (req, res) => {
 
     res.json({
       id: data.id,
+      titulo: data.titulo || '',
       dataExibicao: data.dataexibicao,
       local: data.local,
       teclado: data.teclado,
@@ -66,6 +126,7 @@ app.get('/api/escala', async (req, res) => {
       contrabaixo: data.contrabaixo,
       violao: data.violao,
       bateria: data.bateria,
+      projecao: data.projecao,
       ministro: data.ministro,
       backvocal: data.backvocal,
       vocal: data.vocal,
@@ -75,6 +136,7 @@ app.get('/api/escala', async (req, res) => {
       statusContrabaixo: data.statuscontrabaixo || 'pendente',
       statusViolao: data.statusviolao || 'pendente',
       statusBateria: data.statusbateria || 'pendente',
+      statusProjecao: data.statusprojecao || 'pendente',
       statusMinistro: data.statusministro || 'pendente',
       statusBackvocal: data.statusbackvocal || 'pendente',
       statusVocal: data.statusvocal || 'pendente',
@@ -86,12 +148,15 @@ app.get('/api/escala', async (req, res) => {
   }
 });
 
+// SALVAR/ATUALIZAR ESCALA
 app.post('/api/escala', async (req, res) => {
   try {
     const d = req.body;
+    const idEscala = d.id || 1;
     
     const { data, error } = await supabase.from('escala').upsert({
-      id: 1,
+      id: idEscala,
+      titulo: d.titulo || 'Escala',
       dataexibicao: d.dataExibicao,
       local: d.local,
       teclado: d.teclado,
@@ -99,6 +164,7 @@ app.post('/api/escala', async (req, res) => {
       contrabaixo: d.contrabaixo,
       violao: d.violao,
       bateria: d.bateria,
+      projecao: d.projecao,
       ministro: d.ministro,
       backvocal: d.backvocal,
       vocal: d.vocal,
@@ -108,6 +174,7 @@ app.post('/api/escala', async (req, res) => {
       statuscontrabaixo: d.statusContrabaixo,
       statusviolao: d.statusViolao,
       statusbateria: d.statusBateria,
+      statusprojecao: d.statusProjecao,
       statusministro: d.statusMinistro,
       statusbackvocal: d.statusBackvocal,
       statusvocal: d.statusVocal,
@@ -127,8 +194,56 @@ app.post('/api/escala', async (req, res) => {
   }
 });
 
+// CRIAR NOVA ESCALA
+app.post('/api/escala/nova', async (req, res) => {
+  try {
+    const { titulo, dataExibicao, local } = req.body;
+    
+    const { data, error } = await supabase.from('escala').insert({
+      titulo: titulo || 'Nova Escala',
+      dataexibicao: dataExibicao,
+      local: local,
+      statusteclado: 'pendente',
+      statusguitarra: 'pendente',
+      statuscontrabaixo: 'pendente',
+      statusviolao: 'pendente',
+      statusbateria: 'pendente',
+      statusprojecao: 'pendente',
+      statusministro: 'pendente',
+      statusbackvocal: 'pendente',
+      statusvocal: 'pendente',
+      statuslider: 'pendente'
+    }).select();
+
+    if (error) throw error;
+    res.json({ sucesso: true, escala: data[0] });
+  } catch (erro) {
+    console.log('❌ Erro ao criar escala:', erro);
+    res.json({ sucesso: false });
+  }
+});
+
+// SALVAR STATUS AUTOMATICAMENTE
+app.patch('/api/escala/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { campo, valor } = req.body;
+    
+    const { error } = await supabase
+      .from('escala')
+      .update({ [campo]: valor })
+      .eq('id', id);
+
+    if (error) throw error;
+    res.json({ sucesso: true });
+  } catch (erro) {
+    console.log('❌ Erro ao atualizar status:', erro);
+    res.json({ sucesso: false });
+  }
+});
+
 // ==============================================
-// EQUIPE
+// EQUIPE — NÃO MEXI NADA! CONTINUA IGUAL ✅
 // ==============================================
 app.get('/api/equipe', async (req, res) => {
   try {
@@ -157,7 +272,7 @@ app.delete('/api/equipe/:id', async (req, res) => {
 });
 
 // ==============================================
-// REPERTÓRIO / MATERIAIS
+// REPERTÓRIO — NÃO MEXI NADA! CONTINUA IGUAL ✅
 // ==============================================
 app.get('/api/repertorio', async (req, res) => {
   try {
