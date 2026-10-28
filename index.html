@@ -102,12 +102,10 @@ a { color: var(--secundaria); text-decoration: none; }
     <button class="btn nav-btn" onclick="aba('materiais')">🎶 Repertório</button>
   </nav>
 
-  <!-- ESCALA COM SELETOR DE DATAS -->
   <div id="escala" class="aba-conteudo">
     <div class="card">
       <h3>📋 Escalas</h3>
       
-      <!-- Seletor de datas -->
       <div class="seletor-data">
         <label>Escala:</label>
         <select id="lista-escalas" onchange="selecionarEscala()">
@@ -117,12 +115,11 @@ a { color: var(--secundaria); text-decoration: none; }
         <button id="btn-excluir-escala" class="btn btn-perigo btn-pequeno oculto" onclick="excluirEscala()">🗑️ Excluir</button>
       </div>
 
-      <!-- Dados da escala selecionada -->
       <div id="dados-escala" class="oculto">
         <div class="linha-form">
           <div class="campo">
             <label>📅 Data</label>
-            <input type="date" id="data-exibicao" onchange="mudarData()">
+            <input type="date" id="data-exibicao">
           </div>
           <div class="campo">
             <label>📍 Local</label>
@@ -194,7 +191,6 @@ a { color: var(--secundaria); text-decoration: none; }
           </div>
         </div>
 
-        <!-- Músicas do Culto -->
         <div id="bloco-musicas" style="margin-top: 25px;">
           <h4 style="margin-bottom: 10px;">🎶 Músicas do Culto</h4>
           <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
@@ -205,7 +201,6 @@ a { color: var(--secundaria); text-decoration: none; }
           <ul id="lista-musicas"></ul>
         </div>
 
-        <!-- Botões -->
         <div class="botoes">
           <button id="btn-salvar" class="btn btn-primario" onclick="salvarEscala()">💾 Salvar Escala</button>
           <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">📱 Enviar WhatsApp</button>
@@ -214,7 +209,6 @@ a { color: var(--secundaria); text-decoration: none; }
     </div>
   </div>
 
-  <!-- EQUIPE -->
   <div id="equipe" class="aba-conteudo oculto">
     <div class="card">
       <h3>👥 Equipe</h3>
@@ -244,7 +238,6 @@ a { color: var(--secundaria); text-decoration: none; }
     </div>
   </div>
 
-  <!-- REPERTÓRIO -->
   <div id="materiais" class="aba-conteudo oculto">
     <div class="card">
       <h3>🎶 Repertório</h3>
@@ -269,6 +262,7 @@ let perfil = null;
 let escalaAtualData = null;
 let listaEscalas = [];
 let musicasCulto = [];
+let stsMap = {};
 
 const cargos = [
   {chave:'teclado',nome:'Teclado',icone:'🎹'},
@@ -283,18 +277,41 @@ const cargos = [
   {chave:'lider',nome:'Líder',icone:'👤'}
 ];
 
-// Permissões
+cargos.forEach(c => stsMap[c.chave] = 'pendente');
+
 function aplicarPermissoes() {
   const ehLider = (perfil === 'lider');
-  
-  // Apenas líder vê botões de salvar, excluir e cadastrar
+  document.getElementById
+let usuario = null;
+let perfil = null;
+let escalaAtualData = null;
+let listaEscalas = [];
+let musicasCulto = [];
+let stsMap = {};
+
+const cargos = [
+  {chave:'teclado',nome:'Teclado',icone:'🎹'},
+  {chave:'guitarra',nome:'Guitarra',icone:'🎸'},
+  {chave:'contrabaixo',nome:'Contrabaixo',icone:'🎻'},
+  {chave:'violao',nome:'Violão',icone:'🎸'},
+  {chave:'bateria',nome:'Bateria',icone:'🥁'},
+  {chave:'projecao',nome:'Projeção',icone:'📽️'},
+  {chave:'ministro',nome:'Ministro',icone:'🎤'},
+  {chave:'backvocal',nome:'Back Vocal',icone:'🎤'},
+  {chave:'vocal',nome:'Vocal',icone:'🎤'},
+  {chave:'lider',nome:'Líder',icone:'👤'}
+];
+
+cargos.forEach(c => stsMap[c.chave] = 'pendente');
+
+function aplicarPermissoes() {
+  const ehLider = (perfil === 'lider');
   document.getElementById('btn-salvar').classList.toggle('oculto', !ehLider);
   document.getElementById('btn-excluir-escala').classList.toggle('oculto', !ehLider);
   document.getElementById('bloco-cad-membro').classList.toggle('oculto', !ehLider);
   document.getElementById('bloco-cad-musica').classList.toggle('oculto', !ehLider);
   document.getElementById('bloco-musicas').classList.toggle('oculto', !ehLider);
   
-  // Apenas líder edita data, local e nomes
   document.getElementById('data-exibicao').disabled = !ehLider;
   document.getElementById('local').disabled = !ehLider;
   cargos.forEach(c => {
@@ -303,7 +320,6 @@ function aplicarPermissoes() {
   });
 }
 
-// LOGIN
 async function entrar() {
   const u = document.getElementById('usuario').value.trim();
   const s = document.getElementById('senha').value;
@@ -347,7 +363,11 @@ function aba(nome) {
   if (nome==='materiais') carregarRepertorio();
 }
 
-// GERENCIAR ESCALAS
+function formatarData(dataStr) {
+  if (!dataStr) return '';
+  const [ano, mes, dia] = dataStr.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
 async function carregarListaEscalas() {
   const res = await fetch('/api/escala');
   listaEscalas = await res.json();
@@ -361,19 +381,12 @@ async function carregarListaEscalas() {
     sel.appendChild(opt);
   });
   
-  // Se tinha uma selecionada, mantém
   if (escalaAtualData) {
     sel.value = escalaAtualData;
-    if (escalaAtualData) document.getElementById('dados-escala').classList.remove('oculto');
+    document.getElementById('dados-escala').classList.remove('oculto');
   } else {
     document.getElementById('dados-escala').classList.add('oculto');
   }
-}
-
-function formatarData(dataStr) {
-  if (!dataStr) return '';
-  const [ano, mes, dia] = dataStr.split('-');
-  return `${dia}/${mes}/${ano}`;
 }
 
 async function novaEscala() {
@@ -382,7 +395,6 @@ async function novaEscala() {
   const dataEscolhida = prompt('Digite a data da escala (AAAA-MM-DD):\nExemplo: 2026-10-29');
   if (!dataEscolhida) return;
   
-  // Verifica se já existe
   const existe = listaEscalas.some(e => e.dataExibicao === dataEscolhida);
   if (existe) {
     alert('Já existe uma escala para esta data! Selecione na lista.');
@@ -391,7 +403,6 @@ async function novaEscala() {
     return;
   }
   
-  // Seleciona a nova data (salva só quando o líder preencher e clicar em Salvar)
   escalaAtualData = dataEscolhida;
   document.getElementById('lista-escalas').value = dataEscolhida;
   document.getElementById('data-exibicao').value = dataEscolhida;
@@ -440,10 +451,6 @@ async function carregarEscala(dataEscolhida) {
   aplicarPermissoes();
 }
 
-function mudarData() {
-  // Atualiza a exibição mas só salva quando clicar em Salvar
-}
-
 async function excluirEscala() {
   if (!confirm('Tem certeza que deseja EXCLUIR esta escala?\nEssa ação não pode ser desfeita!')) return;
   
@@ -456,9 +463,6 @@ async function excluirEscala() {
   }
 }
 
-let stsMap = {};
-cargos.forEach(c => stsMap[c.chave] = 'pendente');
-
 function atualizarBotaoStatus(cargo) {
   const btn = document.getElementById(`s_${cargo}`);
   if (!btn) return;
@@ -467,7 +471,6 @@ function atualizarBotaoStatus(cargo) {
   btn.textContent = stsMap[cargo]==='confirmado'?'✅ Disponível':stsMap[cargo]==='recusado'?'❌ Indisponível':'⏳ Pendente';
 }
 
-// ✅ TODOS podem mudar e salvar status
 async function sts(cargo) {
   const a = stsMap[cargo];
   if (a==='pendente') stsMap[cargo]='confirmado';
@@ -513,7 +516,6 @@ async function salvarApenasStatus() {
     body:JSON.stringify(obj)
   });
 }
-// SALVAR ESCALA COMPLETA (só líder)
 async function salvarEscala() {
   if (perfil !== 'lider') { alert('Apenas o líder pode salvar!'); return; }
   if (!escalaAtualData) { alert('Selecione ou crie uma escala primeiro!'); return; }
@@ -554,7 +556,6 @@ async function salvarEscala() {
   await carregarListaEscalas();
 }
 
-// MÚSICAS DO CULTO
 function adicionarMusica() {
   if (perfil !== 'lider') return;
   const nome = document.getElementById('nome-musica').value.trim();
@@ -591,7 +592,6 @@ function renderizarMusicasCulto() {
   `).join('');
 }
 
-// ENVIAR WHATSAPP
 function enviarWhatsApp() {
   if (!escalaAtualData) { alert('Selecione uma escala primeiro!'); return; }
   
@@ -619,7 +619,6 @@ function enviarWhatsApp() {
   window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
-// EQUIPE
 async function carregarEquipe() {
   const res = await fetch('/api/equipe');
   const membros = await res.json();
@@ -664,7 +663,6 @@ async function excluirMembro(id) {
   carregarEquipe();
 }
 
-// REPERTÓRIO
 async function carregarRepertorio() {
   const res = await fetch('/api/repertorio');
   const musicas = await res.json();
@@ -697,16 +695,19 @@ async function carregarRepertorio() {
 async function cadastrarMusica() {
   if (perfil !== 'lider') return;
   const nome = document.getElementById('musica-nome').value.trim();
+  const link = document.getElementById('musica-link
+async function cadastrarMusica() {
+  if (perfil !== 'lider') return;
+  const nome = document.getElementById('musica-nome').value.trim();
   const link = document.getElementById('musica-link').value.trim();
   if (!nome) { alert('Digite o nome da música!'); return; }
   
   await fetch('/api/repertorio', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({nome, link, ensaiada: 0})
+    body: JSON.stringify({nome, link})
   });
   
-  document.getElementById('musica-nome').value = ''
   document.getElementById('musica-nome').value = '';
   document.getElementById('musica-link').value = '';
   carregarRepertorio();
@@ -723,7 +724,7 @@ async function alternarStatusMusica(id, ensaiada) {
 }
 
 async function excluirMusicaRepertorio(id) {
-  if (!confirm('Excluir esta música?')) return;
+  if (!confirm('Excluir esta música do repertório?')) return;
   await fetch(`/api/repertorio/${id}`, { method: 'DELETE' });
   carregarRepertorio();
 }
@@ -735,6 +736,7 @@ document.getElementById('senha').addEventListener('keypress', e => {
 </script>
 
 </body></html>
+
 
 
 
