@@ -72,6 +72,7 @@ a { color: var(--secundaria); text-decoration: none; }
 </style>
 </head>
 <body>
+
 <div id="tela-login" class="login-tela">
   <div class="login-container">
     <div class="login-logo">🎵</div>
@@ -256,32 +257,8 @@ a { color: var(--secundaria); text-decoration: none; }
     </div>
   </div>
 </div>
+
 <script>
-let usuario = null;
-let perfil = null;
-let escalaAtualData = null;
-let listaEscalas = [];
-let musicasCulto = [];
-let stsMap = {};
-
-const cargos = [
-  {chave:'teclado',nome:'Teclado',icone:'🎹'},
-  {chave:'guitarra',nome:'Guitarra',icone:'🎸'},
-  {chave:'contrabaixo',nome:'Contrabaixo',icone:'🎻'},
-  {chave:'violao',nome:'Violão',icone:'🎸'},
-  {chave:'bateria',nome:'Bateria',icone:'🥁'},
-  {chave:'projecao',nome:'Projeção',icone:'📽️'},
-  {chave:'ministro',nome:'Ministro',icone:'🎤'},
-  {chave:'backvocal',nome:'Back Vocal',icone:'🎤'},
-  {chave:'vocal',nome:'Vocal',icone:'🎤'},
-  {chave:'lider',nome:'Líder',icone:'👤'}
-];
-
-cargos.forEach(c => stsMap[c.chave] = 'pendente');
-
-function aplicarPermissoes() {
-  const ehLider = (perfil === 'lider');
-  document.getElementById
 let usuario = null;
 let perfil = null;
 let escalaAtualData = null;
@@ -310,16 +287,9 @@ function aplicarPermissoes() {
   document.getElementById('btn-excluir-escala').classList.toggle('oculto', !ehLider);
   document.getElementById('bloco-cad-membro').classList.toggle('oculto', !ehLider);
   document.getElementById('bloco-cad-musica').classList.toggle('oculto', !ehLider);
-  document.getElementById('bloco-musicas').classList.toggle('oculto', !ehLider);
-  
-  document.getElementById('data-exibicao').disabled = !ehLider;
-  document.getElementById('local').disabled = !ehLider;
-  cargos.forEach(c => {
-    const inp = document.getElementById(`i_${c.chave}`);
-    if (inp) inp.disabled = !ehLider;
-  });
 }
 
+async function entrar() {
 async function entrar() {
   const u = document.getElementById('usuario').value.trim();
   const s = document.getElementById('senha').value;
@@ -357,7 +327,6 @@ function aba(nome) {
   document.querySelectorAll('.aba-conteudo').forEach(a=>a.classList.add('oculto'));
   document.getElementById(nome).classList.remove('oculto');
   aplicarPermissoes();
-  
   if (nome==='escala') carregarListaEscalas();
   if (nome==='equipe') carregarEquipe();
   if (nome==='materiais') carregarRepertorio();
@@ -368,19 +337,18 @@ function formatarData(dataStr) {
   const [ano, mes, dia] = dataStr.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
 async function carregarListaEscalas() {
   const res = await fetch('/api/escala');
   listaEscalas = await res.json();
-  
   const sel = document.getElementById('lista-escalas');
   sel.innerHTML = '<option value="">-- Selecione uma data --</option>';
   listaEscalas.forEach(e => {
     const opt = document.createElement('option');
-    opt.value = e.dataExibicao;
-    opt.textContent = formatarData(e.dataExibicao) + (e.local ? ` — ${e.local}` : '');
+    opt.value = e.dataexibicao;
+    opt.textContent = formatarData(e.dataexibicao) + (e.local ? ` — ${e.local}` : '');
     sel.appendChild(opt);
   });
-  
   if (escalaAtualData) {
     sel.value = escalaAtualData;
     document.getElementById('dados-escala').classList.remove('oculto');
@@ -391,18 +359,15 @@ async function carregarListaEscalas() {
 
 async function novaEscala() {
   if (perfil !== 'lider') { alert('Apenas o líder pode criar escalas!'); return; }
-  
   const dataEscolhida = prompt('Digite a data da escala (AAAA-MM-DD):\nExemplo: 2026-10-29');
   if (!dataEscolhida) return;
-  
-  const existe = listaEscalas.some(e => e.dataExibicao === dataEscolhida);
+  const existe = listaEscalas.some(e => e.dataexibicao === dataEscolhida);
   if (existe) {
     alert('Já existe uma escala para esta data! Selecione na lista.');
     document.getElementById('lista-escalas').value = dataEscolhida;
     selecionarEscala();
     return;
   }
-  
   escalaAtualData = dataEscolhida;
   document.getElementById('lista-escalas').value = dataEscolhida;
   document.getElementById('data-exibicao').value = dataEscolhida;
@@ -421,12 +386,10 @@ async function novaEscala() {
 async function selecionarEscala() {
   const sel = document.getElementById('lista-escalas');
   escalaAtualData = sel.value;
-  
   if (!escalaAtualData) {
     document.getElementById('dados-escala').classList.add('oculto');
     return;
   }
-  
   document.getElementById('dados-escala').classList.remove('oculto');
   await carregarEscala(escalaAtualData);
 }
@@ -434,26 +397,21 @@ async function selecionarEscala() {
 async function carregarEscala(dataEscolhida) {
   const res = await fetch(`/api/escala?data=${encodeURIComponent(dataEscolhida)}`);
   const e = await res.json();
-  
-  document.getElementById('data-exibicao').value = e.dataExibicao || dataEscolhida;
+  document.getElementById('data-exibicao').value = e.dataexibicao || dataEscolhida;
   document.getElementById('local').value = e.local || '';
-  musicasCulto = e.cultoMusicas || [];
+  musicasCulto = e.cultomusicas || [];
   renderizarMusicasCulto();
-  
   cargos.forEach(c => {
     const inp = document.getElementById(`i_${c.chave}`);
     if (inp) inp.value = e[c.chave] || '';
-    const sk = 'status' + c.chave.charAt(0).toUpperCase() + c.chave.slice(1);
-    stsMap[c.chave] = e[sk] || 'pendente';
+    stsMap[c.chave] = e['status' + c.chave] || 'pendente';
     atualizarBotaoStatus(c.chave);
   });
-  
   aplicarPermissoes();
 }
 
 async function excluirEscala() {
   if (!confirm('Tem certeza que deseja EXCLUIR esta escala?\nEssa ação não pode ser desfeita!')) return;
-  
   const res = await fetch(`/api/escala/${escalaAtualData}`, { method: 'DELETE' });
   if (res.ok) {
     escalaAtualData = null;
@@ -476,18 +434,16 @@ async function sts(cargo) {
   if (a==='pendente') stsMap[cargo]='confirmado';
   else if (a==='confirmado') stsMap[cargo]='recusado';
   else stsMap[cargo]='pendente';
-  
   atualizarBotaoStatus(cargo);
   await salvarApenasStatus();
 }
 
 async function salvarApenasStatus() {
   if (!escalaAtualData) return;
-  
   const obj = {
-    dataExibicao: escalaAtualData,
+    dataexibicao: escalaAtualData,
     local: document.getElementById('local').value,
-    cultoMusicas: musicasCulto,
+    cultomusicas: musicasCulto,
     teclado: document.getElementById('i_teclado').value||'',
     guitarra: document.getElementById('i_guitarra').value||'',
     contrabaixo: document.getElementById('i_contrabaixo').value||'',
@@ -498,32 +454,31 @@ async function salvarApenasStatus() {
     backvocal: document.getElementById('i_backvocal').value||'',
     vocal: document.getElementById('i_vocal').value||'',
     lider: document.getElementById('i_lider').value||'',
-    statusTeclado: stsMap.teclado,
-    statusGuitarra: stsMap.guitarra,
-    statusContrabaixo: stsMap.contrabaixo,
-    statusViolao: stsMap.violao,
-    statusBateria: stsMap.bateria,
-    statusProjecao: stsMap.projecao,
-    statusMinistro: stsMap.ministro,
-    statusBackvocal: stsMap.backvocal,
-    statusVocal: stsMap.vocal,
-    statusLider: stsMap.lider
+    statusteclado: stsMap.teclado,
+    statusguitarra: stsMap.guitarra,
+    statuscontrabaixo: stsMap.contrabaixo,
+    statusviolao: stsMap.violao,
+    statusbateria: stsMap.bateria,
+    statusprojecao: stsMap.projecao,
+    statusministro: stsMap.ministro,
+    statusbackvocal: stsMap.backvocal,
+    statusvocal: stsMap.vocal,
+    statuslider: stsMap.lider
   };
-
   await fetch('/api/escala', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(obj)
   });
 }
+
 async function salvarEscala() {
   if (perfil !== 'lider') { alert('Apenas o líder pode salvar!'); return; }
   if (!escalaAtualData) { alert('Selecione ou crie uma escala primeiro!'); return; }
-  
   const obj = {
-    dataExibicao: escalaAtualData,
+    dataexibicao: escalaAtualData,
     local: document.getElementById('local').value,
-    cultoMusicas: musicasCulto,
+    cultomusicas: musicasCulto,
     teclado: document.getElementById('i_teclado').value||'',
     guitarra: document.getElementById('i_guitarra').value||'',
     contrabaixo: document.getElementById('i_contrabaixo').value||'',
@@ -534,24 +489,22 @@ async function salvarEscala() {
     backvocal: document.getElementById('i_backvocal').value||'',
     vocal: document.getElementById('i_vocal').value||'',
     lider: document.getElementById('i_lider').value||'',
-    statusTeclado: stsMap.teclado,
-    statusGuitarra: stsMap.guitarra,
-    statusContrabaixo: stsMap.contrabaixo,
-    statusViolao: stsMap.violao,
-    statusBateria: stsMap.bateria,
-    statusProjecao: stsMap.projecao,
-    statusMinistro: stsMap.ministro,
-    statusBackvocal: stsMap.backvocal,
-    statusVocal: stsMap.vocal,
-    statusLider: stsMap.lider
+    statusteclado: stsMap.teclado,
+    statusguitarra: stsMap.guitarra,
+    statuscontrabaixo: stsMap.contrabaixo,
+    statusviolao: stsMap.violao,
+    statusbateria: stsMap.bateria,
+    statusprojecao: stsMap.projecao,
+    statusministro: stsMap.ministro,
+    statusbackvocal: stsMap.backvocal,
+    statusvocal: stsMap.vocal,
+    statuslider: stsMap.lider
   };
-
   await fetch('/api/escala', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(obj)
   });
-  
   alert('✅ Escala salva com sucesso!');
   await carregarListaEscalas();
 }
@@ -561,7 +514,6 @@ function adicionarMusica() {
   const nome = document.getElementById('nome-musica').value.trim();
   const link = document.getElementById('link-musica').value.trim();
   if (!nome) { alert('Digite o nome da música!'); return; }
-  
   musicasCulto.push({ id: Date.now(), nome, link });
   document.getElementById('nome-musica').value = '';
   document.getElementById('link-musica').value = '';
@@ -594,19 +546,15 @@ function renderizarMusicasCulto() {
 
 function enviarWhatsApp() {
   if (!escalaAtualData) { alert('Selecione uma escala primeiro!'); return; }
-  
   const data = document.getElementById('data-exibicao').value;
   const local = document.getElementById('local').value || '---';
   const dataFormatada = data ? data.split('-').reverse().join('/') : '---';
-  
   let texto = `📋 ESCALA - Ministério de Louvor\n📅 Data: ${dataFormatada}\n📍 Local: ${local}\n\n👥 EQUIPE:\n`;
-  
   cargos.forEach(c => {
     const nome = document.getElementById(`i_${c.chave}`).value || '—';
     const s = stsMap[c.chave]==='confirmado'?'✅ Disponível':stsMap[c.chave]==='recusado'?'❌ Indisponível':'⏳ Pendente';
     texto += `${c.icone} ${c.nome}: ${nome} — ${s}\n`;
   });
-  
   if (musicasCulto.length > 0) {
     texto += '\n🎶 MÚSICAS DO CULTO:\n';
     musicasCulto.forEach(m => {
@@ -615,7 +563,6 @@ function enviarWhatsApp() {
       texto += '\n';
     });
   }
-  
   window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
@@ -624,12 +571,10 @@ async function carregarEquipe() {
   const membros = await res.json();
   const ul = document.getElementById('lista-membros');
   const ehLider = (perfil === 'lider');
-  
   if (membros.length === 0) {
     ul.innerHTML = '<li class="vazio">Nenhum membro cadastrado.</li>';
     return;
   }
-  
   ul.innerHTML = membros.map(m => `
     <li class="item">
       <div>
@@ -646,13 +591,11 @@ async function cadastrarMembro() {
   const nome = document.getElementById('nome-membro').value.trim();
   const funcao = document.getElementById('funcao-membro').value;
   if (!nome) { alert('Digite o nome!'); return; }
-  
   await fetch('/api/equipe', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({nome, funcao})
   });
-  
   document.getElementById('nome-membro').value = '';
   carregarEquipe();
 }
@@ -668,12 +611,10 @@ async function carregarRepertorio() {
   const musicas = await res.json();
   const ul = document.getElementById('lista-repertorio');
   const ehLider = (perfil === 'lider');
-  
   if (musicas.length === 0) {
     ul.innerHTML = '<li class="vazio">Nenhuma música cadastrada.</li>';
     return;
   }
-  
   ul.innerHTML = musicas.map(m => `
     <li class="item">
       <div>
@@ -695,19 +636,13 @@ async function carregarRepertorio() {
 async function cadastrarMusica() {
   if (perfil !== 'lider') return;
   const nome = document.getElementById('musica-nome').value.trim();
-  const link = document.getElementById('musica-link
-async function cadastrarMusica() {
-  if (perfil !== 'lider') return;
-  const nome = document.getElementById('musica-nome').value.trim();
   const link = document.getElementById('musica-link').value.trim();
   if (!nome) { alert('Digite o nome da música!'); return; }
-  
   await fetch('/api/repertorio', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({nome, link})
   });
-  
   document.getElementById('musica-nome').value = '';
   document.getElementById('musica-link').value = '';
   carregarRepertorio();
@@ -729,14 +664,9 @@ async function excluirMusicaRepertorio(id) {
   carregarRepertorio();
 }
 
-// Enter no login
 document.getElementById('senha').addEventListener('keypress', e => {
   if (e.key === 'Enter') entrar();
 });
 </script>
-
 </body></html>
-
-
-
-
+ 
