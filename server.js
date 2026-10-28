@@ -29,24 +29,22 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 })();
 
 // ==============================================
-// MIDDLEWARES — CORRIGIDO AQUI ✅
+// MIDDLEWARES
 // ==============================================
 app.use(cors());
 app.use(express.json());
-// Servir arquivos da raiz do projeto
 app.use(express.static(path.join(__dirname)));
 
-// Rota principal — garante que index.html aparece ✅
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ==============================================
-// DADOS DE ACESSO
+// SENHAS CORRETAS ✅
 // ==============================================
 const usuarios = [
-  { usuario: 'lider', senha: 'lider123', nivel: 'lider' },
-  { usuario: 'membro', senha: 'membro123', nivel: 'membro' }
+  { usuario: 'lider', senha: 'map12lider', nivel: 'lider' },
+  { usuario: 'membro', senha: 'map12membro', nivel: 'membro' }
 ];
 
 // ==============================================
@@ -66,7 +64,6 @@ app.post('/api/login', async (req, res) => {
 // ==============================================
 // ROTAS — ESCALA
 // ==============================================
-
 app.get('/api/escala', async (req, res) => {
   const { data } = req.query;
   
