@@ -7,309 +7,272 @@ const app = express();
 const PORTA = process.env.PORT || 3000;
 
 // ==============================================
-// CONEXÃO — usando os nomes que JÁ estão no Render ✅
+// CONEXÃO COM SUPABASE
 // ==============================================
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.log('⚠️ Variáveis de ambiente não configuradas!');
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Teste de conexão
+(async () => {
+  try {
+    const { data, error } = await supabase.from('escala').select('id').limit(1);
+    if (error) console.log('⚠️ Tabela escala ainda vazia ou sem permissão');
+    else console.log('✅ Conectado ao Supabase com sucesso!');
+  } catch(e) {
+    console.log('Erro de conexão:', e.message);
+  }
+})();
+
 // ==============================================
-// CONFIGURAÇÕES
+// MIDDLEWARES
 // ==============================================
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '.')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ==============================================
-// LOGIN — CONTINUA EXATAMENTE IGUAL ✅
+// DADOS DE ACESSO (simples — pode mover para tabela depois)
+// ==============================================
+const usuarios = [
+  { usuario: 'lider', senha: 'lider123', nivel: 'lider' },
+  { usuario: 'membro', senha: 'membro123', nivel: 'membro' }
+  // Adicione outros aqui se precisar
+];
+
+// ==============================================
+// ROTAS DE AUTENTICAÇÃO
 // ==============================================
 app.post('/api/login', async (req, res) => {
   const { usuario, senha } = req.body;
-  try {
-    const { data } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('usuario', usuario)
-      .eq('senha', senha)
-      .single();
-
-    if (data) {
-      res.json({ sucesso: true, usuario: data.usuario, nivel: data.nivel });
-    } else {
-      res.json({ sucesso: false, mensagem: 'Usuário ou senha incorretos' });
-    }
-  } catch {
-    res.json({ sucesso: false, mensagem: 'Usuário ou senha incorretos' });
+  const u = usuarios.find(x => x.usuario === usuario && x.senha === senha);
+  
+  if (u) {
+    res.json({ sucesso: true, usuario: u.usuario, nivel: u.nivel });
+  } else {
+    res.json({ sucesso: false, mensagem: 'Usuário ou senha incorretos!' });
   }
 });
 
 // ==============================================
-// ESCALA — ATUALIZADO com Projeção e várias escalas ✅
+// ROTAS — VÁRIAS ESCALAS
 // ==============================================
 
-// PEGAR TODAS AS ESCALAS
-app.get('/api/escalas', async (req, res) => {
-  try {
-    const { data } = await supabase
-      .from('escala')
-      .select('*')
-      .order('dataexibicao', { ascending: true });
-
-    res.json(data || []);
-  } catch {
-    res.json([]);
-  }
-});
-
-// PEGAR UMA ESCALA ESPECÍFICA (mantém compatibilidade)
-app.get('/api/escala/:id', async (req, res) => {
-  try {
-    const { data } = await supabase
-      .from('escala')
-      .select('*')
-      .eq('id', req.params.id)
-      .maybeSingle();
-
-    if (!data) return res.json({ id: parseInt(req.params.id) });
-
-    res.json({
-      id: data.id,
-      titulo: data.titulo || '',
-      dataExibicao: data.dataexibicao,
-      local: data.local,
-      teclado: data.teclado,
-      guitarra: data.guitarra,
-      contrabaixo: data.contrabaixo,
-      violao: data.violao,
-      bateria: data.bateria,
-      projecao: data.projecao,
-      ministro: data.ministro,
-      backvocal: data.backvocal,
-      vocal: data.vocal,
-      lider: data.lider,
-      statusTeclado: data.statusteclado || 'pendente',
-      statusGuitarra: data.statusguitarra || 'pendente',
-      statusContrabaixo: data.statuscontrabaixo || 'pendente',
-      statusViolao: data.statusviolao || 'pendente',
-      statusBateria: data.statusbateria || 'pendente',
-      statusProjecao: data.statusprojecao || 'pendente',
-      statusMinistro: data.statusministro || 'pendente',
-      statusBackvocal: data.statusbackvocal || 'pendente',
-      statusVocal: data.statusvocal || 'pendente',
-      statusLider: data.statuslider || 'pendente',
-      cultoMusicas: data.cultomusicas || []
-    });
-  } catch {
-    res.json({ id: parseInt(req.params.id) });
-  }
-});
-
-// MANTER COMPATIBILIDADE — rota antiga continua funcionando
+// Listar TODAS as escalas
 app.get('/api/escala', async (req, res) => {
-  try {
-    const { data } = await supabase
+  const { data } = req.query;
+  
+  if (data) {
+    // Buscar uma escala específica pela data
+    const { data: escala, error } = await supabase
       .from('escala')
       .select('*')
-      .eq('id', 1)
-      .maybeSingle();
-
-    if (!data) return res.json({ id: 1 });
-
-    res.json({
-      id: data.id,
-      titulo: data.titulo || '',
-      dataExibicao: data.dataexibicao,
-      local: data.local,
-      teclado: data.teclado,
-      guitarra: data.guitarra,
-      contrabaixo: data.contrabaixo,
-      violao: data.violao,
-      bateria: data.bateria,
-      projecao: data.projecao,
-      ministro: data.ministro,
-      backvocal: data.backvocal,
-      vocal: data.vocal,
-      lider: data.lider,
-      statusTeclado: data.statusteclado || 'pendente',
-      statusGuitarra: data.statusguitarra || 'pendente',
-      statusContrabaixo: data.statuscontrabaixo || 'pendente',
-      statusViolao: data.statusviolao || 'pendente',
-      statusBateria: data.statusbateria || 'pendente',
-      statusProjecao: data.statusprojecao || 'pendente',
-      statusMinistro: data.statusministro || 'pendente',
-      statusBackvocal: data.statusbackvocal || 'pendente',
-      statusVocal: data.statusvocal || 'pendente',
-      statusLider: data.statuslider || 'pendente',
-      cultoMusicas: data.cultomusicas || []
-    });
-  } catch {
-    res.json({ id: 1 });
-  }
-});
-
-// SALVAR/ATUALIZAR ESCALA
-app.post('/api/escala', async (req, res) => {
-  try {
-    const d = req.body;
-    const idEscala = d.id || 1;
+      .eq('data_exibicao', data)
+      .single();
     
-    const { data, error } = await supabase.from('escala').upsert({
-      id: idEscala,
-      titulo: d.titulo || 'Escala',
-      dataexibicao: d.dataExibicao,
-      local: d.local,
-      teclado: d.teclado,
-      guitarra: d.guitarra,
-      contrabaixo: d.contrabaixo,
-      violao: d.violao,
-      bateria: d.bateria,
-      projecao: d.projecao,
-      ministro: d.ministro,
-      backvocal: d.backvocal,
-      vocal: d.vocal,
-      lider: d.lider,
-      statusteclado: d.statusTeclado,
-      statusguitarra: d.statusGuitarra,
-      statuscontrabaixo: d.statusContrabaixo,
-      statusviolao: d.statusViolao,
-      statusbateria: d.statusBateria,
-      statusprojecao: d.statusProjecao,
-      statusministro: d.statusMinistro,
-      statusbackvocal: d.statusBackvocal,
-      statusvocal: d.statusVocal,
-      statuslider: d.statusLider,
-      cultomusicas: d.cultoMusicas
-    }, { onConflict: 'id' }).select();
-
-    if (error) {
-      console.log('❌ ERRO:', error);
-      return res.json({ sucesso: false, mensagem: error.message });
+    if (error && error.code !== 'PGRST116') {
+      return res.status(500).json({ erro: error.message });
     }
     
-    res.json({ sucesso: true, mensagem: '✅ Escala salva com sucesso!' });
-  } catch (erro) {
-    console.log('❌ EXCEÇÃO:', erro);
-    res.json({ sucesso: false, mensagem: 'Erro ao salvar' });
-  }
-});
-
-// CRIAR NOVA ESCALA
-app.post('/api/escala/nova', async (req, res) => {
-  try {
-    const { titulo, dataExibicao, local } = req.body;
+    if (!escala) {
+      return res.json({
+        dataExibicao: data,
+        local: '',
+        cultoMusicas: [],
+        teclado: '', guitarra: '', contrabaixo: '', violao: '', bateria: '', projecao: '',
+        ministro: '', backvocal: '', vocal: '', lider: '',
+        statusTeclado: 'pendente', statusGuitarra: 'pendente', statusContrabaixo: 'pendente',
+        statusViolao: 'pendente', statusBateria: 'pendente', statusProjecao: 'pendente',
+        statusMinistro: 'pendente', statusBackvocal: 'pendente', statusVocal: 'pendente',
+        statusLider: 'pendente'
+      });
+    }
     
-    const { data, error } = await supabase.from('escala').insert({
-      titulo: titulo || 'Nova Escala',
-      dataexibicao: dataExibicao,
-      local: local,
-      statusteclado: 'pendente',
-      statusguitarra: 'pendente',
-      statuscontrabaixo: 'pendente',
-      statusviolao: 'pendente',
-      statusbateria: 'pendente',
-      statusprojecao: 'pendente',
-      statusministro: 'pendente',
-      statusbackvocal: 'pendente',
-      statusvocal: 'pendente',
-      statuslider: 'pendente'
-    }).select();
-
-    if (error) throw error;
-    res.json({ sucesso: true, escala: data[0] });
-  } catch (erro) {
-    console.log('❌ Erro ao criar escala:', erro);
-    res.json({ sucesso: false });
-  }
-});
-
-// SALVAR STATUS AUTOMATICAMENTE
-app.patch('/api/escala/:id/status', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { campo, valor } = req.body;
-    
-    const { error } = await supabase
+    return res.json({
+      id: escala.id,
+      dataExibicao: escala.data_exibicao,
+      local: escala.local || '',
+      cultoMusicas: escala.culto_musicas || [],
+      teclado: escala.teclado || '',
+      guitarra: escala.guitarra || '',
+      contrabaixo: escala.contrabaixo || '',
+      violao: escala.violao || '',
+      bateria: escala.bateria || '',
+      projecao: escala.projecao || '',
+      ministro: escala.ministro || '',
+      backvocal: escala.backvocal || '',
+      vocal: escala.vocal || '',
+      lider: escala.lider || '',
+      statusTeclado: escala.status_teclado || 'pendente',
+      statusGuitarra: escala.status_guitarra || 'pendente',
+      statusContrabaixo: escala.status_contrabaixo || 'pendente',
+      statusViolao: escala.status_violao || 'pendente',
+      statusBateria: escala.status_bateria || 'pendente',
+      statusProjecao: escala.status_projecao || 'pendente',
+      statusMinistro: escala.status_ministro || 'pendente',
+      statusBackvocal: escala.status_backvocal || 'pendente',
+      statusVocal: escala.status_vocal || 'pendente',
+      statusLider: escala.status_lider || 'pendente'
+    });
+  } else {
+    // Listar todas as escalas
+    const { data: escalas, error } = await supabase
       .from('escala')
-      .update({ [campo]: valor })
-      .eq('id', id);
-
-    if (error) throw error;
-    res.json({ sucesso: true });
-  } catch (erro) {
-    console.log('❌ Erro ao atualizar status:', erro);
-    res.json({ sucesso: false });
+      .select('id, data_exibicao, local, created_at')
+      .order('data_exibicao', { ascending: false });
+    
+    if (error) {
+      return res.status(500).json({ erro: error.message });
+    }
+    
+    return res.json(escalas.map(e => ({
+      id: e.id,
+      dataExibicao: e.data_exibicao,
+      local: e.local
+    })));
   }
+});
+
+// Salvar/Atualizar escala
+app.post('/api/escala', async (req, res) => {
+  const {
+    dataExibicao, local, cultoMusicas,
+    teclado, guitarra, contrabaixo, violao, bateria, projecao,
+    ministro, backvocal, vocal, lider,
+    statusTeclado, statusGuitarra, statusContrabaixo, statusViolao,
+    statusBateria, statusProjecao, statusMinistro, statusBackvocal,
+    statusVocal, statusLider
+  } = req.body;
+
+  if (!dataExibicao) {
+    return res.status(400).json({ sucesso: false, mensagem: 'Data é obrigatória!' });
+  }
+
+  // Verificar se já existe para essa data
+  const { data: existente } = await supabase
+    .from('escala')
+    .select('id')
+    .eq('data_exibicao', dataExibicao)
+    .single();
+
+  const dados = {
+    data_exibicao: dataExibicao,
+    local: local || '',
+    culto_musicas: cultoMusicas || [],
+    teclado: teclado || '',
+    guitarra: guitarra || '',
+    contrabaixo: contrabaixo || '',
+    violao: violao || '',
+    bateria: bateria || '',
+    projecao: projecao || '',
+    ministro: ministro || '',
+    backvocal: backvocal || '',
+    vocal: vocal || '',
+    lider: lider || '',
+    status_teclado: statusTeclado || 'pendente',
+    status_guitarra: statusGuitarra || 'pendente',
+    status_contrabaixo: statusContrabaixo || 'pendente',
+    status_violao: statusViolao || 'pendente',
+    status_bateria: statusBateria || 'pendente',
+    status_projecao: statusProjecao || 'pendente',
+    status_ministro: statusMinistro || 'pendente',
+    status_backvocal: statusBackvocal || 'pendente',
+    status_vocal: statusVocal || 'pendente',
+    status_lider: statusLider || 'pendente'
+  };
+
+  let resultado;
+  if (existente) {
+    // Atualizar
+    resultado = await supabase
+      .from('escala')
+      .update(dados)
+      .eq('id', existente.id)
+      .select();
+  } else {
+    // Criar nova
+    resultado = await supabase
+      .from('escala')
+      .insert(dados)
+      .select();
+  }
+
+  if (resultado.error) {
+    console.log('Erro ao salvar escala:', resultado.error);
+    return res.json({ sucesso: false, mensagem: 'Erro ao salvar!' });
+  }
+
+  res.json({ sucesso: true, mensagem: 'Escala salva!', dados: resultado.data?.[0] });
+});
+
+// Excluir escala
+app.delete('/api/escala/:data', async (req, res) => {
+  const { data } = req.params;
+  const { error } = await supabase
+    .from('escala')
+    .delete()
+    .eq('data_exibicao', data);
+  
+  if (error) {
+    return res.status(500).json({ sucesso: false, erro: error.message });
+  }
+  res.json({ sucesso: true });
 });
 
 // ==============================================
-// EQUIPE — NÃO MEXI NADA! CONTINUA IGUAL ✅
+// ROTAS — EQUIPE
 // ==============================================
 app.get('/api/equipe', async (req, res) => {
-  try {
-    const { data } = await supabase.from('equipe').select('*').order('id');
-    res.json(data || []);
-  } catch { res.json([]); }
+  const { data: membros, error } = await supabase.from('equipe').select('*').order('nome');
+  if (error) return res.status(500).json([]);
+  res.json(membros || []);
 });
 
 app.post('/api/equipe', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('equipe').insert(req.body).select();
-    if (error) throw error;
-    res.json({ sucesso: true, data });
-  } catch (erro) {
-    console.log('Erro ao salvar membro:', erro);
-    res.json({ sucesso: false });
-  }
+  const { nome, funcao } = req.body;
+  const { data, error } = await supabase.from('equipe').insert({ nome, funcao }).select();
+  if (error) return res.status(500).json({ erro: error.message });
+  res.json({ sucesso: true, dados: data?.[0] });
 });
 
 app.delete('/api/equipe/:id', async (req, res) => {
-  try {
-    const { error } = await supabase.from('equipe').delete().eq('id', req.params.id);
-    if (error) throw error;
-    res.json({ sucesso: true });
-  } catch { res.json({ sucesso: false }); }
+  const { id } = req.params;
+  await supabase.from('equipe').delete().eq('id', id);
+  res.json({ sucesso: true });
 });
 
 // ==============================================
-// REPERTÓRIO — NÃO MEXI NADA! CONTINUA IGUAL ✅
+// ROTAS — REPERTÓRIO
 // ==============================================
 app.get('/api/repertorio', async (req, res) => {
-  try {
-    const { data } = await supabase.from('repertorio').select('*').order('id');
-    res.json(data || []);
-  } catch { res.json([]); }
+  const { data: musicas, error } = await supabase.from('repertorio').select('*').order('nome');
+  if (error) return res.status(500).json([]);
+  res.json(musicas || []);
 });
 
 app.post('/api/repertorio', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('repertorio').insert(req.body).select();
-    if (error) throw error;
-    res.json({ sucesso: true, data });
-  } catch (erro) {
-    console.log('Erro ao salvar música:', erro);
-    res.json({ sucesso: false });
-  }
+  const { nome, link, ensaiada } = req.body;
+  const { data, error } = await supabase.from('repertorio').insert({ nome, link, ensaiada }).select();
+  if (error) return res.status(500).json({ erro: error.message });
+  res.json({ sucesso: true, dados: data?.[0] });
 });
 
 app.put('/api/repertorio/:id', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('repertorio')
-      .update(req.body)
-      .eq('id', req.params.id)
-      .select();
-    if (error) throw error;
-    res.json({ sucesso: true, data });
-  } catch { res.json({ sucesso: false }); }
+  const { id } = req.params;
+  const { ensaiada } = req.body;
+  await supabase.from('repertorio').update({ ensaiada }).eq('id', id);
+  res.json({ sucesso: true });
 });
 
 app.delete('/api/repertorio/:id', async (req, res) => {
-  try {
-    const { error } = await supabase.from('repertorio').delete().eq('id', req.params.id);
-    if (error) throw error;
-    res.json({ sucesso: true });
-  } catch { res.json({ sucesso: false }); }
+  const { id } = req.params;
+  await supabase.from('repertorio').delete().eq('id', id);
+  res.json({ sucesso: true });
 });
 
 // ==============================================
