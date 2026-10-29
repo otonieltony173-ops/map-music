@@ -1,8 +1,10 @@
-const CACHE_NAME = "map-music-v1";
+const CACHE_NAME = "map-music-v2";
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
-    "./manifest.json"
+    "./manifest.json",
+    "./icon-192.png",
+    "./icon-512.png"
 ];
 
 self.addEventListener("install", event => {
@@ -28,6 +30,11 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
+    // Não coloca os dados da API no cache — sempre busca atualizado
+    if (event.request.url.includes("/api/") || event.request.url.includes("supabase")) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(resp => {
