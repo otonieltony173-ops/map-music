@@ -77,7 +77,7 @@ a { color: var(--secundaria); text-decoration: none; }
     <div id="msg-login" style="margin-bottom:15px;"></div>
     <div class="input-group">
       <label>Usuário</label>
-      <input type="text" id="usuario" autocomplete="off">
+      <input type="text" id="usuario" autocomplete="off" placeholder="lider ou membro">
     </div>
     <div class="input-group">
       <label>Senha</label>
@@ -102,7 +102,7 @@ a { color: var(--secundaria); text-decoration: none; }
 
   <div id="escala" class="aba-conteudo">
     
-    <!-- LISTA DE TODAS AS ESCALAS (VISÍVEL PARA TODOS) -->
+    <!-- LISTA DE TODAS AS ESCALAS (VISÍVEL PARA TODOS OS PERFIS) -->
     <div class="card" style="background: rgba(16, 185, 129, 0.05); border-color: var(--primaria);">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
         <h3>📅 Escalas Disponíveis</h3>
@@ -210,8 +210,9 @@ a { color: var(--secundaria); text-decoration: none; }
       </div>
 
       <div class="botoes-fixos" id="area-botoes-principais">
-        <button class="btn btn-primario" id="btn-salvar-total" onclick="salvarEscalaAtual()">💾 Salvar Alterações da Escala</button>
+        <button class="btn btn-primario" id="btn-salvar-total" onclick="salvarEscalaAtual()">💾 Salvar Alterações</button>
         <button class="btn btn-whatsapp" id="btn-whatsapp-total" onclick="enviarWpp()">📱 Enviar pelo WhatsApp</button>
+        <button class="btn btn-perigo" id="btn-excluir-escala" onclick="excluirEscalaAtual()">🗑️ Excluir Escala</button>
       </div>
     </div>
 
@@ -290,14 +291,12 @@ const cargos = [
 function aplicarPermissoes() {
   const ehLider = (perfil === 'lider');
   
-  // Apenas o líder pode criar novas escalas, adicionar músicas na escala e salvar
   document.getElementById('bloco-btn-nova').style.display = ehLider ? 'block' : 'none';
   document.getElementById('bloco-culto-musicas').style.display = ehLider ? 'block' : 'none';
   document.getElementById('area-botoes-principais').style.display = ehLider ? 'flex' : 'none';
   document.getElementById('bloco-add-membro').style.display = ehLider ? 'block' : 'none';
   document.getElementById('bloco-add-musica').style.display = ehLider ? 'block' : 'none';
   
-  // Trava campos de texto da escala para membros (somente visualização)
   document.getElementById('etitulo').disabled = !ehLider;
   document.getElementById('edata').disabled = !ehLider;
   document.getElementById('elocal').disabled = !ehLider;
@@ -309,25 +308,35 @@ function aplicarPermissoes() {
 }
 
 async function entrar() {
-  const u = document.getElementById('usuario').value.trim();
-  const s = document.getElementById('senha').value;
-  const res = await fetch('/api/login', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({usuario:u, senha:s})
-  });
-  const d = await res.json();
-  if (d.sucesso) {
-    usuario = d.usuario;
-    perfil = d.nivel;
-    document.getElementById('tela-login').style.display = 'none';
-    document.getElementById('tela-principal').classList.add('ativa');
-    aplicarPermissoes();
-    await carregarListaEscalas();
-    carregarEquipe();
-    carregarRepertorio();
-  } else {
-    document.getElementById('msg-login').innerHTML = `<span style="color:var(--perigo)">${d.mensagem}</span>`;
+  const u = document.getElementById('usuario').value.trim().toLowerCase();
+  const s = document.getElementById('senha').value.trim();
+  
+  if (!u || !s) {
+    document.getElementById('msg-login').innerHTML = `<span style="color:var(--perigo)">Preencha o usuário e a senha</span>`;
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({usuario: u, senha: s})
+    });
+    const d = await res.json();
+    if (d.sucesso) {
+      usuario = d.usuario;
+      perfil = d.nivel;
+      document.getElementById('tela-login').style.display = 'none';
+      document.getElementById('tela-principal').classList.add('ativa');
+      aplicarPermissoes();
+      await carregarListaEscalas();
+      carregarEquipe();
+      carregarRepertorio();
+    } else {
+      document.getElementById('msg-login').innerHTML = `<span style="color:var(--perigo)">${d.mensagem}</span>`;
+    }
+  } catch (err) {
+    document.getElementById('msg-login').innerHTML = `<span style="color:var(--perigo)">Erro de conexão ao fazer login</span>`;
   }
 }
 
@@ -413,7 +422,6 @@ async function carregarEscalaEspecifica(id) {
       atualizarVisualBotaoStatus(c.chave, stsMap[c.chave]);
     });
 
-    // Reaplicar permissões para garantir que membros fiquem com os campos travados
     aplicarPermissoes();
   } catch (err) {
     console.log('Erro ao carregar escala:', err);
@@ -429,7 +437,6 @@ function atualizarVisualBotaoStatus(cargo, status) {
   else btn.textContent = '⏳ Pendente';
 }
 
-// ⚡ MEMBROS E LÍDERES PODEM CLICAR PARA ALTERAR O PRÓPRIO STATUS (SALVA AUTOMATICAMENTE)
 async function sts(cargo) {
   if (!escalaAtualId) return;
 
@@ -466,7 +473,6 @@ async function sts(cargo) {
   }
 }
 
-// APENAS O LÍDER PODE CRIAR NOVA ESCALA
 async function criarNovaEscala() {
   if (perfil !== 'lider') return;
   const titulo = prompt("Digite o título da nova escala (Ex: Culto de Quarta, Sábado, Domingo...):", "Culto Especial");
@@ -493,7 +499,6 @@ async function criarNovaEscala() {
   }
 }
 
-// APENAS O LÍDER PODE SALVAR ALTERAÇÕES GERAIS DA ESCALA
 async function salvarEscalaAtual() {
   if (perfil !== 'lider') { alert('Apenas o líder pode salvar a escala!'); return; }
   if (!escalaAtualId) return;
@@ -542,6 +547,29 @@ async function salvarEscalaAtual() {
   } catch (err) {
     console.log('Erro ao salvar:', err);
     alert('Erro de conexão ao salvar.');
+  }
+}
+
+async function excluirEscalaAtual() {
+  if (perfil !== 'lider') { alert('Apenas o líder pode excluir escalas!'); return; }
+  if (!escalaAtualId) return;
+
+  if (!confirm('Tem certeza que deseja excluir esta escala permanentemente?')) return;
+
+  try {
+    const res = await fetch(`/api/escala/${escalaAtualId}`, {
+      method: 'DELETE'
+    });
+    const d = await res.json();
+    if (d.sucesso) {
+      alert('🗑️ Escala excluída com sucesso!');
+      carregarListaEscalas();
+    } else {
+      alert('Erro ao excluir a escala.');
+    }
+  } catch (err) {
+    console.log('Erro ao excluir escala:', err);
+    alert('Erro de conexão ao excluir.');
   }
 }
 
