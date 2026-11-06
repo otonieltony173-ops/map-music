@@ -27,7 +27,7 @@ body { background: var(--fundo); color: var(--texto); min-height: 100vh; }
 .input-group { margin-bottom: 20px; text-align: left; }
 .input-group label { display: block; margin-bottom: 8px; color: var(--texto-suave); font-size: 14px; }
 .input-group input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--borda); background: var(--fundo); color: var(--texto); font-size: 16px; }
-.btn { padding: 12px 20px; border-radius: 8px; border: none; font-size: 15px; cursor: pointer; }
+.btn { padding: 10px 16px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-weight: 500; }
 .btn-primario { background: var(--primaria); color: white; width: 100%; }
 .btn-perigo { background: var(--perigo); color: white; }
 .btn-pequeno { padding: 6px 12px; font-size: 13px; }
@@ -48,7 +48,7 @@ body { background: var(--fundo); color: var(--texto); min-height: 100vh; }
 .item-nome { font-weight: 500; }
 .item-info { font-size: 13px; color: var(--texto-suave); }
 .acoes { display: flex; gap: 6px; }
-.status-btn { padding: 4px 10px; border-radius: 20px; font-size: 12px; border: none; cursor: pointer; }
+.status-btn { padding: 6px 12px; border-radius: 20px; font-size: 12px; border: none; cursor: pointer; font-weight: 600; }
 .status-confirmado { background: var(--sucesso); color: white; }
 .status-pendente { background: var(--aviso); color: white; }
 .status-recusado { background: var(--perigo); color: white; }
@@ -65,10 +65,10 @@ body { background: var(--fundo); color: var(--texto); min-height: 100vh; }
 .sem-dados { text-align: center; padding: 30px; color: var(--texto-suave); font-style: italic; }
 a { color: var(--secundaria); text-decoration: none; }
 .botoes-fixos { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-.rodape { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--borda); color: var(--texto-suave); font-size: 12px; }
 </style>
 </head>
 <body>
+
 <div id="tela-login" class="login-tela">
   <div class="login-container">
     <div class="login-logo">🎵</div>
@@ -101,9 +101,45 @@ a { color: var(--secundaria); text-decoration: none; }
   </nav>
 
   <div id="escala" class="aba-conteudo">
-    <div class="card">
-      <h3>📅 Dados da Escala</h3>
+    
+    <!-- SELETOR E CRIADOR DE ESCALAS (VISÍVEL PARA O LÍDER) -->
+    <div class="card" style="background: rgba(16, 185, 129, 0.05); border-color: var(--primaria);">
+      <h3>🗂️ Selecionar Escala</h3>
       <div class="linha-form">
+        <div class="campo" style="flex: 2;">
+          <label>Escalas Cadastradas</label>
+          <select id="seletor-escala" onchange="mudarEscala()" style="font-weight: 500;"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAMPO PARA CRIAR NOVA ESCALA (EXCLUSIVO DO LÍDER) -->
+    <div class="card" id="bloco-criar-escala" style="display: none; border-color: var(--secundaria);">
+      <h3>➕ Criar Nova Escala (Sábado, Domingo, etc.)</h3>
+      <div class="linha-form">
+        <div class="campo">
+          <label>Título do Culto</label>
+          <input type="text" id="nova_titulo" placeholder="Ex: Culto de Sábado">
+        </div>
+        <div class="campo">
+          <label>Data</label>
+          <input type="date" id="nova_data">
+        </div>
+        <div class="campo">
+          <label>Local</label>
+          <input type="text" id="nova_local" placeholder="Ex: Templo Principal">
+        </div>
+      </div>
+      <button class="btn btn-primario" onclick="criarNovaEscala()">✨ Cadastrar Nova Escala</button>
+    </div>
+
+    <div class="card">
+      <h3>📅 Dados da Escala Atual</h3>
+      <div class="linha-form">
+        <div class="campo">
+          <label>Título</label>
+          <input type="text" id="etitulo">
+        </div>
         <div class="campo">
           <label>Data</label>
           <input type="date" id="edata">
@@ -116,7 +152,7 @@ a { color: var(--secundaria); text-decoration: none; }
     </div>
 
     <div class="card">
-      <h3>🎹 Escala</h3>
+      <h3>🎹 Escala do Evento</h3>
       <div class="escala-grade">
         <div class="escala-item">
           <div class="escala-instrumento">🎹 Teclado</div>
@@ -186,7 +222,7 @@ a { color: var(--secundaria); text-decoration: none; }
     </div>
 
     <div class="botoes-fixos" id="area-botoes-principais">
-      <button class="btn btn-primario" id="btn-salvar-total" onclick="salvar()">💾 Salvar Escala</button>
+      <button class="btn btn-primario" id="btn-salvar-total" onclick="salvarEscalaAtual()">💾 Salvar Alterações da Escala</button>
       <button class="btn btn-whatsapp" id="btn-whatsapp-total" onclick="enviarWpp()">📱 Enviar pelo WhatsApp</button>
     </div>
   </div>
@@ -235,10 +271,12 @@ a { color: var(--secundaria); text-decoration: none; }
   </div>
 
 </div>
+
 <script>
 let usuario = null;
 let perfil = null;
-let escalaAtualId = 1;
+let escalaAtualId = null;
+let listaEscalasCache = [];
 let cultosMusicas = [];
 let stsMap = {
   teclado: 'pendente', guitarra: 'pendente', contrabaixo: 'pendente', violao: 'pendente',
@@ -261,12 +299,16 @@ const cargos = [
 
 function aplicarPermissoes() {
   const ehLider = (perfil === 'lider');
+  document.getElementById('bloco-criar-escala').style.display = ehLider ? 'block' : 'none';
   document.getElementById('bloco-culto-musicas').style.display = ehLider ? 'block' : 'none';
   document.getElementById('area-botoes-principais').style.display = ehLider ? 'flex' : 'none';
   document.getElementById('bloco-add-membro').style.display = ehLider ? 'block' : 'none';
   document.getElementById('bloco-add-musica').style.display = ehLider ? 'block' : 'none';
+  
+  document.getElementById('etitulo').disabled = !ehLider;
   document.getElementById('edata').disabled = !ehLider;
   document.getElementById('elocal').disabled = !ehLider;
+  
   cargos.forEach(c => {
     const inp = document.getElementById(`i_${c.chave}`);
     if (inp) inp.disabled = !ehLider;
@@ -288,7 +330,7 @@ async function entrar() {
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('tela-principal').classList.add('ativa');
     aplicarPermissoes();
-    carregarEscala();
+    await carregarListaEscalas();
     carregarEquipe();
     carregarRepertorio();
   } else {
@@ -297,7 +339,7 @@ async function entrar() {
 }
 
 function sair() {
-  usuario = null; perfil = null;
+  usuario = null; perfil = null; escalaAtualId = null;
   document.getElementById('tela-principal').classList.remove('ativa');
   document.getElementById('tela-login').style.display = 'flex';
   document.getElementById('usuario').value = '';
@@ -310,21 +352,96 @@ function aba(nome) {
   document.querySelectorAll('.aba-conteudo').forEach(a=>a.classList.add('oculto'));
   document.getElementById(nome).classList.remove('oculto');
   aplicarPermissoes();
-  if (nome==='escala') carregarEscala();
+  if (nome==='escala') carregarListaEscalas();
   if (nome==='equipe') carregarEquipe();
   if (nome==='materiais') carregarRepertorio();
 }
 
+async function carregarListaEscalas() {
+  try {
+    const res = await fetch('/api/escalas');
+    listaEscalasCache = await res.json();
+    const select = document.getElementById('seletor-escala');
+    
+    if (listaEscalasCache.length === 0) {
+      select.innerHTML = '<option value="">Nenhuma escala cadastrada</option>';
+      if (perfil === 'lider') {
+        await criarEscalaInicialAutomatica();
+      }
+      return;
+    }
+
+    select.innerHTML = listaEscalasCache.map(e => {
+      const dataFmt = e.dataexibicao ? new Date(e.dataexibicao + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data';
+      return `<option value="${e.id}">${e.titulo || 'Escala'} (${dataFmt})</option>`;
+    }).join('');
+
+    if (!escalaAtualId && listaEscalasCache.length > 0) {
+      escalaAtualId = listaEscalasCache[0].id;
+    } else if (escalaAtualId) {
+      select.value = escalaAtualId;
+    }
+
+    if (escalaAtualId) {
+      carregarEscalaEspecifica(escalaAtualId);
+    }
+  } catch (err) {
+    console.log('Erro ao carregar escalas:', err);
+  }
+}
+
+function mudarEscala() {
+  const select = document.getElementById('seletor-escala');
+  escalaAtualId = parseInt(select.value);
+  carregarEscalaEspecifica(escalaAtualId);
+}
+
+async function carregarEscalaEspecifica(id) {
+  try {
+    const res = await fetch(`/api/escala/${id}`);
+    const e = await res.json();
+    
+    document.getElementById('etitulo').value = e.titulo || '';
+    document.getElementById('edata').value = e.dataExibicao || '';
+    document.getElementById('elocal').value = e.local || '';
+    cultosMusicas = e.cultoMusicas || [];
+    renderCultoMusicas();
+
+    cargos.forEach(c => {
+      const inp = document.getElementById(`i_${c.chave}`);
+      if (inp) inp.value = e[c.chave] || '';
+      
+      const sk = 'status' + c.chave.charAt(0).toUpperCase() + c.chave.slice(1);
+      stsMap[c.chave] = e[sk] || 'pendente';
+      
+      atualizarVisualBotaoStatus(c.chave, stsMap[c.chave]);
+    });
+  } catch (err) {
+    console.log('Erro ao carregar escala específica:', err);
+  }
+}
+
+function atualizarVisualBotaoStatus(cargo, status) {
+  const btn = document.getElementById(`s_${cargo}`);
+  if (!btn) return;
+  btn.className = `btn status-btn status-${status}`;
+  if (status === 'confirmado') btn.textContent = '✅ Disponível';
+  else if (status === 'recusado') btn.textContent = '❌ Indisponível';
+  else btn.textContent = '⏳ Pendente';
+}
+
+// ⚡ SALVA AUTOMATICAMENTE O STATUS (PATCH)
 async function sts(cargo) {
-  const a = stsMap[cargo];
-  if (a==='pendente') stsMap[cargo]='confirmado';
-  else if (a==='confirmado') stsMap[cargo]='recusado';
-  else stsMap[cargo]='pendente';
-  
-  const b = document.getElementById(`s_${cargo}`);
-  b.className = '';
-  b.classList.add('btn','status-btn',`status-${stsMap[cargo]}`);
-  b.textContent = stsMap[cargo]==='confirmado'?'✅ Disponível':stsMap[cargo]==='recusado'?'❌ Indisponível':'⏳ Pendente';
+  if (!escalaAtualId) return;
+
+  const atual = stsMap[cargo];
+  let novo = 'pendente';
+  if (atual === 'pendente') novo = 'confirmado';
+  else if (atual === 'confirmado') novo = 'recusado';
+  else novo = 'pendente';
+
+  stsMap[cargo] = novo;
+  atualizarVisualBotaoStatus(cargo, novo);
 
   const colunaMap = {
     teclado: 'statusteclado',
@@ -339,131 +456,176 @@ async function sts(cargo) {
     lider: 'statuslider'
   };
 
-  const campoBanco = colunaMap[cargo];
-
   try {
     await fetch(`/api/escala/${escalaAtualId}/status`, {
       method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ campo: campoBanco, valor: stsMap[cargo] })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campo: colunaMap[cargo], valor: novo })
     });
   } catch (err) {
-    console.log('Erro ao atualizar status automaticamente:', err);
+    console.log('Erro ao atualizar status:', err);
   }
 }
 
-async function carregarEscala() {
-  const res = await fetch('/api/escala');
-  const e = await res.json();
-  escalaAtualId = e.id || 1;
-  document.getElementById('edata').value = e.dataExibicao||'';
-  document.getElementById('elocal').value = e.local||'';
-  cultosMusicas = e.cultoMusicas||[];
-  renderCultoMusicas();
+// CRIAR NOVA ESCALA PELOS CAMPOS PREENCHIDOS PELO LÍDER
+async function criarNovaEscala() {
+  if (perfil !== 'lider') return;
+  
+  const titulo = document.getElementById('nova_titulo').value.trim();
+  const dataExibicao = document.getElementById('nova_data').value;
+  const local = document.getElementById('nova_local').value.trim();
 
-  cargos.forEach(c=>{
-    const inp = document.getElementById(`i_${c.chave}`);
-    if (inp) inp.value = e[c.chave]||'';
-    const sk = 'status'+c.chave.charAt(0).toUpperCase()+c.chave.slice(1);
-    stsMap[c.chave] = e[sk]||'pendente';
-    const btn = document.getElementById(`s_${c.chave}`);
-    if (btn) {
-      btn.className = '';
-      btn.classList.add('btn','status-btn',`status-${stsMap[c.chave]}`);
-      btn.textContent = stsMap[c.chave]==='confirmado'?'✅ Disponível':stsMap[c.chave]==='recusado'?'❌ Indisponível':'⏳ Pendente';
+  if (!titulo || !dataExibicao) {
+    alert('Preencha pelo menos o Título e a Data da nova escala!');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/escala/nova', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo, dataExibicao, local })
+    });
+    const d = await res.json();
+    if (d.sucesso && d.escala) {
+      escalaAtualId = d.escala.id;
+      // Limpa os campos de cadastro
+      document.getElementById('nova_titulo').value = '';
+      document.getElementById('nova_data').value = '';
+      document.getElementById('nova_local').value = '';
+      
+      await carregarListaEscalas();
+      alert('✅ Nova escala criada com sucesso!');
+    } else {
+      alert('Erro ao criar nova escala.');
     }
-  });
-  aplicarPermissoes();
+  } catch (err) {
+    console.log('Erro ao criar escala:', err);
+  }
+}
+
+async function criarEscalaInicialAutomatica() {
+  try {
+    const res = await fetch('/api/escala/nova', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo: 'Culto Principal', dataExibicao: new Date().toISOString().split('T')[0], local: 'Templo' })
+    });
+    const d = await res.json();
+    if (d.sucesso && d.escala) {
+      escalaAtualId = d.escala.id;
+      await carregarListaEscalas();
+    }
+  } catch (err) {}
+}
+
+async function salvarEscalaAtual() {
+  if (perfil !== 'lider') { alert('Apenas o líder pode salvar a escala!'); return; }
+  if (!escalaAtualId) return;
+
+  const obj = {
+    id: escalaAtualId,
+    titulo: document.getElementById('etitulo').value || 'Escala',
+    dataExibicao: document.getElementById('edata').value,
+    local: document.getElementById('elocal').value,
+    cultoMusicas: cultosMusicas,
+    teclado: document.getElementById('i_teclado').value || '',
+    guitarra: document.getElementById('i_guitarra').value || '',
+    contrabaixo: document.getElementById('i_contrabaixo').value || '',
+    violao: document.getElementById('i_violao').value || '',
+    bateria: document.getElementById('i_bateria').value || '',
+    projecao: document.getElementById('i_projecao').value || '',
+    ministro: document.getElementById('i_ministro').value || '',
+    backvocal: document.getElementById('i_backvocal').value || '',
+    vocal: document.getElementById('i_vocal').value || '',
+    lider: document.getElementById('i_lider').value || '',
+    statusTeclado: stsMap.teclado,
+    statusGuitarra: stsMap.guitarra,
+    statusContrabaixo: stsMap.contrabaixo,
+    statusViolao: stsMap.violao,
+    statusBateria: stsMap.bateria,
+    statusProjecao: stsMap.projecao,
+    statusMinistro: stsMap.ministro,
+    statusBackvocal: stsMap.backvocal,
+    statusVocal: stsMap.vocal,
+    statusLider: stsMap.lider
+  };
+
+  try {
+    const res = await fetch('/api/escala', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(obj)
+    });
+    const d = await res.json();
+    if (d.sucesso) {
+      alert('✅ Escala salva com sucesso!');
+      carregarListaEscalas();
+    } else {
+      alert('Erro ao salvar: ' + (d.mensagem || ''));
+    }
+  } catch (err) {
+    console.log('Erro ao salvar:', err);
+    alert('Erro de conexão ao salvar.');
+  }
 }
 
 function addCultoMusica() {
-  if (perfil!=='lider') {alert('Apenas o líder pode adicionar!');return;}
+  if (perfil !== 'lider') return;
   const n = document.getElementById('cm_nome').value.trim();
   const l = document.getElementById('cm_link').value.trim();
-  if (!n) {alert('Digite o nome da música!');return;}
-  cultosMusicas.push({id:Date.now(),nome:n,link:l});
-  document.getElementById('cm_nome').value='';
-  document.getElementById('cm_link').value='';
+  if (!n) { alert('Digite o nome da música!'); return; }
+  cultosMusicas.push({ id: Date.now(), nome: n, link: l });
+  document.getElementById('cm_nome').value = '';
+  document.getElementById('cm_link').value = '';
   renderCultoMusicas();
 }
 
 function remCultoMusica(id) {
-  if (perfil!=='lider') return;
-  cultosMusicas = cultosMusicas.filter(m=>m.id!==id);
+  if (perfil !== 'lider') return;
+  cultosMusicas = cultosMusicas.filter(m => m.id !== id);
   renderCultoMusicas();
 }
 
 function renderCultoMusicas() {
   const l = document.getElementById('lista-culto-musicas');
-  if (cultosMusicas.length===0) {
+  if (cultosMusicas.length === 0) {
     l.innerHTML = '<li class="sem-dados">Nenhuma música adicionada.</li>';
     return;
   }
-  const ehLider = (perfil==='lider');
-  l.innerHTML = cultosMusicas.map(m=>`<li class="item">
-    <div><div class="item-nome">🎵 ${m.nome}</div><div class="item-info">${m.link?`<a href="${m.link}" target="_blank">🔗 ${m.link}</a>`:'Sem link cadastrado'}</div></div>
-    ${ehLider?`<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="remCultoMusica(${m.id})">🗑️</button></div>`:''}
+  const ehLider = (perfil === 'lider');
+  l.innerHTML = cultosMusicas.map(m => `<li class="item">
+    <div><div class="item-nome">🎵 ${m.nome}</div><div class="item-info">${m.link ? `<a href="${m.link}" target="_blank">🔗 ${m.link}</a>` : 'Sem link cadastrado'}</div></div>
+    ${ehLider ? `<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="remCultoMusica(${m.id})">🗑️</button></div>` : ''}
   </li>`).join('');
 }
 
-async function salvar() {
-  if (perfil!=='lider') {alert('Apenas o líder pode salvar a escala!');return;}
-  const d = document.getElementById('edata').value;
-  const loc = document.getElementById('elocal').value;
-  const obj = {
-    id: escalaAtualId,
-    titulo: 'Escala',
-    dataExibicao:d, local:loc, cultoMusicas:cultosMusicas,
-    teclado:document.getElementById('i_teclado').value||'',
-    guitarra:document.getElementById('i_guitarra').value||'',
-    contrabaixo:document.getElementById('i_contrabaixo').value||'',
-    violao:document.getElementById('i_violao').value||'',
-    bateria:document.getElementById('i_bateria').value||'',
-    projecao:document.getElementById('i_projecao').value||'',
-    ministro:document.getElementById('i_ministro').value||'',
-    backvocal:document.getElementById('i_backvocal').value||'',
-    vocal:document.getElementById('i_vocal').value||'',
-    lider:document.getElementById('i_lider').value||'',
-    statusTeclado:stsMap.teclado, statusGuitarra:stsMap.guitarra,
-    statusContrabaixo:stsMap.contrabaixo, statusViolao:stsMap.violao,
-    statusBateria:stsMap.bateria, statusProjecao:stsMap.projecao,
-    statusMinistro:stsMap.ministro, statusBackvocal:stsMap.backvocal,
-    statusVocal:stsMap.vocal, statusLider:stsMap.lider
-  };
-  const res = await fetch('/api/escala', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(obj)
-  });
-  await res.json();
-  alert('✅ Escala salva com sucesso!');
-  carregarEscala();
-}
-
 function enviarWpp() {
-  if (perfil!=='lider') {alert('Apenas o líder pode enviar pelo WhatsApp!');return;}
-  const d = document.getElementById('edata').value||'---';
-  const loc = document.getElementById('elocal').value||'---';
-  let txt = `📋 ESCALA - Ministério de Louvor\n📅 Data: ${d}\n📍 Local: ${loc}\n\n👥 EQUIPE:\n`;
+  if (perfil !== 'lider') { alert('Apenas o líder pode enviar pelo WhatsApp!'); return; }
+  const t = document.getElementById('etitulo').value || 'Escala';
+  const d = document.getElementById('edata').value || '---';
+  const loc = document.getElementById('elocal').value || '---';
+  let txt = `📋 ${t}\n📅 Data: ${d}\n📍 Local: ${loc}\n\n👥 EQUIPE:\n`;
   const nomes = {
-    teclado:document.getElementById('i_teclado').value||'',
-    guitarra:document.getElementById('i_guitarra').value||'',
-    contrabaixo:document.getElementById('i_contrabaixo').value||'',
-    violao:document.getElementById('i_violao').value||'',
-    bateria:document.getElementById('i_bateria').value||'',
-    projecao:document.getElementById('i_projecao').value||'',
-    ministro:document.getElementById('i_ministro').value||'',
-    backvocal:document.getElementById('i_backvocal').value||'',
-    vocal:document.getElementById('i_vocal').value||'',
-    lider:document.getElementById('i_lider').value||''
+    teclado: document.getElementById('i_teclado').value || '',
+    guitarra: document.getElementById('i_guitarra').value || '',
+    contrabaixo: document.getElementById('i_contrabaixo').value || '',
+    violao: document.getElementById('i_violao').value || '',
+    bateria: document.getElementById('i_bateria').value || '',
+    projecao: document.getElementById('i_projecao').value || '',
+    ministro: document.getElementById('i_ministro').value || '',
+    backvocal: document.getElementById('i_backvocal').value || '',
+    vocal: document.getElementById('i_vocal').value || '',
+    lider: document.getElementById('i_lider').value || ''
   };
-  cargos.forEach(c=>{
-    const n = nomes[c.chave]||'—';
-    const s = stsMap[c.chave]==='confirmado'?'✅ Disponível':stsMap[c.chave]==='recusado'?'❌ Indisponível':'⏳ Pendente';
+  cargos.forEach(c => {
+    const n = nomes[c.chave] || '—';
+    const s = stsMap[c.chave] === 'confirmado' ? '✅ Disponível' : stsMap[c.chave] === 'recusado' ? '❌ Indisponível' : '⏳ Pendente';
     txt += `${c.icone} ${c.nome}: ${n} — ${s}\n`;
   });
-  if (cultosMusicas.length>0) {
+  if (cultosMusicas.length > 0) {
     txt += '\n🎶 MÚSICAS DO CULTO:\n';
-    cultosMusicas.forEach(m=>{
+    cultosMusicas.forEach(m => {
       txt += `🎵 ${m.nome}`;
       if (m.link) txt += `\n🔗 ${m.link}`;
       txt += '\n';
@@ -476,31 +638,31 @@ async function carregarEquipe() {
   const res = await fetch('/api/equipe');
   const arr = await res.json();
   const l = document.getElementById('lista-equipe');
-  if (arr.length===0) {l.innerHTML='<li class="sem-dados">Nenhum membro cadastrado.</li>';return;}
-  const ehLider = (perfil==='lider');
-  l.innerHTML = arr.map(m=>`<li class="item">
-    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.funcaoNome||m.funcao}</div></div>
-    ${ehLider?`<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="delMembro(${m.id})">🗑️ Excluir</button></div>`:''}
+  if (arr.length === 0) { l.innerHTML = '<li class="sem-dados">Nenhum membro cadastrado.</li>'; return; }
+  const ehLider = (perfil === 'lider');
+  l.innerHTML = arr.map(m => `<li class="item">
+    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.funcaoNome || m.funcao}</div></div>
+    ${ehLider ? `<div class="acoes"><button class="btn btn-perigo btn-pequeno" onclick="delMembro(${m.id})">🗑️ Excluir</button></div>` : ''}
   </li>`).join('');
 }
 
 async function addMembro() {
-  if (perfil!=='lider') return;
+  if (perfil !== 'lider') return;
   const n = document.getElementById('m_nome').value.trim();
   const f = document.getElementById('m_funcao').value;
-  if (!n) {alert('Digite o nome do membro!');return;}
+  if (!n) { alert('Digite o nome do membro!'); return; }
   await fetch('/api/equipe', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({nome:n,funcao:f})
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nome: n, funcao: f })
   });
-  document.getElementById('m_nome').value='';
+  document.getElementById('m_nome').value = '';
   carregarEquipe();
 }
 
 async function delMembro(id) {
-  if (perfil!=='lider') return;
+  if (perfil !== 'lider') return;
   if (!confirm('Tem certeza que deseja excluir este membro?')) return;
-  await fetch(`/api/equipe/${id}`, {method:'DELETE'});
+  await fetch(`/api/equipe/${id}`, { method: 'DELETE' });
   carregarEquipe();
 }
 
@@ -508,48 +670,48 @@ async function carregarRepertorio() {
   const res = await fetch('/api/repertorio');
   const arr = await res.json();
   const l = document.getElementById('lista-musicas');
-  if (arr.length===0) {l.innerHTML='<li class="sem-dados">Nenhuma música cadastrada.</li>';return;}
-  const ehLider = (perfil==='lider');
-  l.innerHTML = arr.map(m=>`<li class="item">
-    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.link?`<a href="${m.link}" target="_blank">🔗 Abrir no YouTube</a>`:'Sem link cadastrado'}</div></div>
-    ${ehLider?`<div class="acoes">
-      <button class="btn status-btn ${m.ensaiada?'ensaiada':'nao-ensaiada'}" onclick="altStatusMus(${m.id},${m.ensaiada?0:1})">${m.ensaiada?'✅ Ensaiada':'❌ Não Ensaiada'}</button>
+  if (arr.length === 0) { l.innerHTML = '<li class="sem-dados">Nenhuma música cadastrada.</li>'; return; }
+  const ehLider = (perfil === 'lider');
+  l.innerHTML = arr.map(m => `<li class="item">
+    <div><div class="item-nome">${m.nome}</div><div class="item-info">${m.link ? `<a href="${m.link}" target="_blank">🔗 Abrir no YouTube</a>` : 'Sem link cadastrado'}</div></div>
+    ${ehLider ? `<div class="acoes">
+      <button class="btn status-btn ${m.ensaiada ? 'ensaiada' : 'nao-ensaiada'}" onclick="altStatusMus(${m.id},${m.ensaiada ? 0 : 1})">${m.ensaiada ? '✅ Ensaiada' : '❌ Não Ensaiada'}</button>
       <button class="btn btn-perigo btn-pequeno" onclick="delMus(${m.id})">🗑️ Excluir</button>
-    </div>`:''}
+    </div>` : ''}
   </li>`).join('');
 }
 
 async function addMusica() {
-  if (perfil!=='lider') return;
+  if (perfil !== 'lider') return;
   const n = document.getElementById('mus_nome').value.trim();
   const l = document.getElementById('mus_link').value.trim();
-  if (!n) {alert('Digite o nome da música!');return;}
+  if (!n) { alert('Digite o nome da música!'); return; }
   await fetch('/api/repertorio', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({nome:n,link:l,ensaiada:0})
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nome: n, link: l, ensaiada: 0 })
   });
-  document.getElementById('mus_nome').value='';
-  document.getElementById('mus_link').value='';
+  document.getElementById('mus_nome').value = '';
+  document.getElementById('mus_link').value = '';
   carregarRepertorio();
 }
 
 async function altStatusMus(id, e) {
-  if (perfil!=='lider') return;
+  if (perfil !== 'lider') return;
   await fetch(`/api/repertorio/${id}`, {
-    method:'PUT', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ensaiada:e})
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ensaiada: e })
   });
   carregarRepertorio();
 }
 
 async function delMus(id) {
-  if (perfil!=='lider') return;
+  if (perfil !== 'lider') return;
   if (!confirm('Excluir esta música do repertório?')) return;
-  await fetch(`/api/repertorio/${id}`, {method:'DELETE'});
+  await fetch(`/api/repertorio/${id}`, { method: 'DELETE' });
   carregarRepertorio();
 }
 
-document.getElementById('senha').addEventListener('keypress',e=>{if(e.key==='Enter')entrar();});
+document.getElementById('senha').addEventListener('keypress', e => { if (e.key === 'Enter') entrar(); });
 </script>
 
 </body></html>
