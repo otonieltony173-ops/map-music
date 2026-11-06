@@ -95,136 +95,126 @@ a { color: var(--secundaria); text-decoration: none; }
   </header>
 
   <nav class="navegacao">
-    <button class="btn nav-btn ativo" onclick="aba('escala')">📋 Escala</button>
+    <button class="btn nav-btn ativo" onclick="aba('escala')">📋 Escalas</button>
     <button class="btn nav-btn" onclick="aba('equipe')">👥 Equipe</button>
     <button class="btn nav-btn" onclick="aba('materiais')">🎶 Materiais</button>
   </nav>
 
   <div id="escala" class="aba-conteudo">
     
-    <!-- SELETOR E CRIADOR DE ESCALAS (VISÍVEL PARA O LÍDER) -->
+    <!-- LISTA DE TODAS AS ESCALAS (VISÍVEL PARA TODOS) -->
     <div class="card" style="background: rgba(16, 185, 129, 0.05); border-color: var(--primaria);">
-      <h3>🗂️ Selecionar Escala</h3>
-      <div class="linha-form">
-        <div class="campo" style="flex: 2;">
-          <label>Escalas Cadastradas</label>
-          <select id="seletor-escala" onchange="mudarEscala()" style="font-weight: 500;"></select>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+        <h3>📅 Escalas Disponíveis</h3>
+        <div id="bloco-btn-nova" style="display: none;">
+          <button class="btn btn-primario" onclick="criarNovaEscala()" style="padding: 8px 14px;">➕ Criar Nova Escala</button>
         </div>
+      </div>
+      <div id="container-lista-escalas" style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="sem-dados">Carregando escalas...</div>
       </div>
     </div>
 
-    <!-- CAMPO PARA CRIAR NOVA ESCALA (EXCLUSIVO DO LÍDER) -->
-    <div class="card" id="bloco-criar-escala" style="display: none; border-color: var(--secundaria);">
-      <h3>➕ Criar Nova Escala (Sábado, Domingo, etc.)</h3>
-      <div class="linha-form">
-        <div class="campo">
-          <label>Título do Culto</label>
-          <input type="text" id="nova_titulo" placeholder="Ex: Culto de Sábado">
-        </div>
-        <div class="campo">
-          <label>Data</label>
-          <input type="date" id="nova_data">
-        </div>
-        <div class="campo">
-          <label>Local</label>
-          <input type="text" id="nova_local" placeholder="Ex: Templo Principal">
-        </div>
+    <!-- PAINEL DE DETALHES DA ESCALA SELECIONADA -->
+    <div id="painel-detalhe-escala" class="oculto">
+      <div style="margin-bottom: 15px;">
+        <button class="btn btn-pequeno" onclick="voltarParaListaEscalas()" style="background: var(--borda); color: var(--texto);">⬅️ Voltar para a Lista de Escalas</button>
       </div>
-      <button class="btn btn-primario" onclick="criarNovaEscala()">✨ Cadastrar Nova Escala</button>
-    </div>
 
-    <div class="card">
-      <h3>📅 Dados da Escala Atual</h3>
-      <div class="linha-form">
-        <div class="campo">
-          <label>Título</label>
-          <input type="text" id="etitulo">
-        </div>
-        <div class="campo">
-          <label>Data</label>
-          <input type="date" id="edata">
-        </div>
-        <div class="campo">
-          <label>Local</label>
-          <input type="text" id="elocal" placeholder="Ex: Templo">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🎹 Escala do Evento</h3>
-      <div class="escala-grade">
-        <div class="escala-item">
-          <div class="escala-instrumento">🎹 Teclado</div>
-          <div class="escala-input-name"><input type="text" id="i_teclado"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_teclado" onclick="sts('teclado')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">🎸 Guitarra</div>
-          <div class="escala-input-name"><input type="text" id="i_guitarra"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_guitarra" onclick="sts('guitarra')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">🎻 Contrabaixo</div>
-          <div class="escala-input-name"><input type="text" id="i_contrabaixo"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_contrabaixo" onclick="sts('contrabaixo')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">🎸 Violão</div>
-          <div class="escala-input-name"><input type="text" id="i_violao"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_violao" onclick="sts('violao')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">🥁 Bateria</div>
-          <div class="escala-input-name"><input type="text" id="i_bateria"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_bateria" onclick="sts('bateria')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">📽️ Projeção</div>
-          <div class="escala-input-name"><input type="text" id="i_projecao"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_projecao" onclick="sts('projecao')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">🎤 Ministro</div>
-          <div class="escala-input-name"><input type="text" id="i_ministro"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_ministro" onclick="sts('ministro')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">🎤 Back Vocal</div>
-          <div class="escala-input-name"><input type="text" id="i_backvocal"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_backvocal" onclick="sts('backvocal')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">🎤 Vocal</div>
-          <div class="escala-input-name"><input type="text" id="i_vocal"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_vocal" onclick="sts('vocal')">⏳</button></div>
-        </div>
-        <div class="escala-item">
-          <div class="escala-instrumento">👤 Líder do Dia</div>
-          <div class="escala-input-name"><input type="text" id="i_lider"></div>
-          <div class="escala-status"><button class="btn status-btn status-pendente" id="s_lider" onclick="sts('lider')">⏳</button></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="bloco-culto-musicas">
-      <h3>📂 Repertório do Culto</h3>
-      <div id="form-culto-musica">
+      <div class="card">
+        <h3>📅 Dados da Escala</h3>
         <div class="linha-form">
-          <div class="campo"><label>Música</label><input type="text" id="cm_nome" placeholder="Nome da música"></div>
-          <div class="campo"><label>Link YouTube</label><input type="url" id="cm_link" placeholder="https://..."></div>
+          <div class="campo">
+            <label>Título</label>
+            <input type="text" id="etitulo" placeholder="Ex: Culto de Domingo">
+          </div>
+          <div class="campo">
+            <label>Data</label>
+            <input type="date" id="edata">
+          </div>
+          <div class="campo">
+            <label>Local</label>
+            <input type="text" id="elocal" placeholder="Ex: Templo">
+          </div>
         </div>
-        <button class="btn btn-primario btn-pequeno" onclick="addCultoMusica()">➕ Adicionar Música</button>
       </div>
-      <ul id="lista-culto-musicas" style="margin-top:15px;">
-        <li class="sem-dados">Nenhuma música adicionada.</li>
-      </ul>
+
+      <div class="card">
+        <h3>🎹 Escala</h3>
+        <div class="escala-grade">
+          <div class="escala-item">
+            <div class="escala-instrumento">🎹 Teclado</div>
+            <div class="escala-input-name"><input type="text" id="i_teclado"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_teclado" onclick="sts('teclado')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">🎸 Guitarra</div>
+            <div class="escala-input-name"><input type="text" id="i_guitarra"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_guitarra" onclick="sts('guitarra')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">🎻 Contrabaixo</div>
+            <div class="escala-input-name"><input type="text" id="i_contrabaixo"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_contrabaixo" onclick="sts('contrabaixo')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">🎸 Violão</div>
+            <div class="escala-input-name"><input type="text" id="i_violao"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_violao" onclick="sts('violao')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">🥁 Bateria</div>
+            <div class="escala-input-name"><input type="text" id="i_bateria"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_bateria" onclick="sts('bateria')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">📽️ Projeção</div>
+            <div class="escala-input-name"><input type="text" id="i_projecao"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_projecao" onclick="sts('projecao')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">🎤 Ministro</div>
+            <div class="escala-input-name"><input type="text" id="i_ministro"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_ministro" onclick="sts('ministro')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">🎤 Back Vocal</div>
+            <div class="escala-input-name"><input type="text" id="i_backvocal"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_backvocal" onclick="sts('backvocal')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">🎤 Vocal</div>
+            <div class="escala-input-name"><input type="text" id="i_vocal"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_vocal" onclick="sts('vocal')">⏳</button></div>
+          </div>
+          <div class="escala-item">
+            <div class="escala-instrumento">👤 Líder do Dia</div>
+            <div class="escala-input-name"><input type="text" id="i_lider"></div>
+            <div class="escala-status"><button class="btn status-btn status-pendente" id="s_lider" onclick="sts('lider')">⏳</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="bloco-culto-musicas">
+        <h3>📂 Repertório do Culto</h3>
+        <div id="form-culto-musica">
+          <div class="linha-form">
+            <div class="campo"><label>Música</label><input type="text" id="cm_nome" placeholder="Nome da música"></div>
+            <div class="campo"><label>Link YouTube</label><input type="url" id="cm_link" placeholder="https://..."></div>
+          </div>
+          <button class="btn btn-primario btn-pequeno" onclick="addCultoMusica()">➕ Adicionar Música</button>
+        </div>
+        <ul id="lista-culto-musicas" style="margin-top:15px;">
+          <li class="sem-dados">Nenhuma música adicionada.</li>
+        </ul>
+      </div>
+
+      <div class="botoes-fixos" id="area-botoes-principais">
+        <button class="btn btn-primario" id="btn-salvar-total" onclick="salvarEscalaAtual()">💾 Salvar Alterações da Escala</button>
+        <button class="btn btn-whatsapp" id="btn-whatsapp-total" onclick="enviarWpp()">📱 Enviar pelo WhatsApp</button>
+      </div>
     </div>
 
-    <div class="botoes-fixos" id="area-botoes-principais">
-      <button class="btn btn-primario" id="btn-salvar-total" onclick="salvarEscalaAtual()">💾 Salvar Alterações da Escala</button>
-      <button class="btn btn-whatsapp" id="btn-whatsapp-total" onclick="enviarWpp()">📱 Enviar pelo WhatsApp</button>
-    </div>
   </div>
 
   <div id="equipe" class="aba-conteudo oculto">
@@ -299,12 +289,15 @@ const cargos = [
 
 function aplicarPermissoes() {
   const ehLider = (perfil === 'lider');
-  document.getElementById('bloco-criar-escala').style.display = ehLider ? 'block' : 'none';
+  
+  // Apenas o líder pode criar novas escalas, adicionar músicas na escala e salvar
+  document.getElementById('bloco-btn-nova').style.display = ehLider ? 'block' : 'none';
   document.getElementById('bloco-culto-musicas').style.display = ehLider ? 'block' : 'none';
   document.getElementById('area-botoes-principais').style.display = ehLider ? 'flex' : 'none';
   document.getElementById('bloco-add-membro').style.display = ehLider ? 'block' : 'none';
   document.getElementById('bloco-add-musica').style.display = ehLider ? 'block' : 'none';
   
+  // Trava campos de texto da escala para membros (somente visualização)
   document.getElementById('etitulo').disabled = !ehLider;
   document.getElementById('edata').disabled = !ehLider;
   document.getElementById('elocal').disabled = !ehLider;
@@ -361,39 +354,42 @@ async function carregarListaEscalas() {
   try {
     const res = await fetch('/api/escalas');
     listaEscalasCache = await res.json();
-    const select = document.getElementById('seletor-escala');
+    const container = document.getElementById('container-lista-escalas');
     
     if (listaEscalasCache.length === 0) {
-      select.innerHTML = '<option value="">Nenhuma escala cadastrada</option>';
-      if (perfil === 'lider') {
-        await criarEscalaInicialAutomatica();
-      }
+      container.innerHTML = '<div class="sem-dados">Nenhuma escala cadastrada no momento.</div>';
       return;
     }
 
-    select.innerHTML = listaEscalasCache.map(e => {
-      const dataFmt = e.dataexibicao ? new Date(e.dataexibicao + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data';
-      return `<option value="${e.id}">${e.titulo || 'Escala'} (${dataFmt})</option>`;
+    container.innerHTML = listaEscalasCache.map(e => {
+      const dataFmt = e.dataexibicao ? new Date(e.dataexibicao + 'T00:00:00').toLocaleDateString('pt-BR') : 'Data não definida';
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--fundo); padding: 12px 15px; border-radius: 8px; border: 1px solid var(--borda); flex-wrap: wrap; gap: 10px;">
+          <div>
+            <div style="font-weight: 600; color: var(--primaria); font-size: 16px;">🎵 ${e.titulo || 'Escala'}</div>
+            <div style="font-size: 13px; color: var(--texto-suave);">📅 Data: ${dataFmt} | 📍 Local: ${e.local || 'Não definido'}</div>
+          </div>
+          <button class="btn btn-primario btn-pequeno" onclick="abrirEscala(${e.id})">👁️ Visualizar / Status</button>
+        </div>
+      `;
     }).join('');
 
-    if (!escalaAtualId && listaEscalasCache.length > 0) {
-      escalaAtualId = listaEscalasCache[0].id;
-    } else if (escalaAtualId) {
-      select.value = escalaAtualId;
-    }
-
-    if (escalaAtualId) {
-      carregarEscalaEspecifica(escalaAtualId);
-    }
+    document.getElementById('container-lista-escalas').style.display = 'block';
+    document.getElementById('painel-detalhe-escala').classList.add('oculto');
   } catch (err) {
-    console.log('Erro ao carregar escalas:', err);
+    console.log('Erro ao carregar lista de escalas:', err);
   }
 }
 
-function mudarEscala() {
-  const select = document.getElementById('seletor-escala');
-  escalaAtualId = parseInt(select.value);
-  carregarEscalaEspecifica(escalaAtualId);
+async function abrirEscala(id) {
+  escalaAtualId = id;
+  document.getElementById('container-lista-escalas').style.display = 'none';
+  document.getElementById('painel-detalhe-escala').classList.remove('oculto');
+  await carregarEscalaEspecifica(id);
+}
+
+function voltarParaListaEscalas() {
+  carregarListaEscalas();
 }
 
 async function carregarEscalaEspecifica(id) {
@@ -416,8 +412,11 @@ async function carregarEscalaEspecifica(id) {
       
       atualizarVisualBotaoStatus(c.chave, stsMap[c.chave]);
     });
+
+    // Reaplicar permissões para garantir que membros fiquem com os campos travados
+    aplicarPermissoes();
   } catch (err) {
-    console.log('Erro ao carregar escala específica:', err);
+    console.log('Erro ao carregar escala:', err);
   }
 }
 
@@ -430,7 +429,7 @@ function atualizarVisualBotaoStatus(cargo, status) {
   else btn.textContent = '⏳ Pendente';
 }
 
-// ⚡ SALVA AUTOMATICAMENTE O STATUS (PATCH)
+// ⚡ MEMBROS E LÍDERES PODEM CLICAR PARA ALTERAR O PRÓPRIO STATUS (SALVA AUTOMATICAMENTE)
 async function sts(cargo) {
   if (!escalaAtualId) return;
 
@@ -467,18 +466,14 @@ async function sts(cargo) {
   }
 }
 
-// CRIAR NOVA ESCALA PELOS CAMPOS PREENCHIDOS PELO LÍDER
+// APENAS O LÍDER PODE CRIAR NOVA ESCALA
 async function criarNovaEscala() {
   if (perfil !== 'lider') return;
-  
-  const titulo = document.getElementById('nova_titulo').value.trim();
-  const dataExibicao = document.getElementById('nova_data').value;
-  const local = document.getElementById('nova_local').value.trim();
+  const titulo = prompt("Digite o título da nova escala (Ex: Culto de Quarta, Sábado, Domingo...):", "Culto Especial");
+  if (!titulo) return;
 
-  if (!titulo || !dataExibicao) {
-    alert('Preencha pelo menos o Título e a Data da nova escala!');
-    return;
-  }
+  const dataExibicao = prompt("Digite a data (AAAA-MM-DD):", new Date().toISOString().split('T')[0]);
+  const local = prompt("Digite o local:", "Templo");
 
   try {
     const res = await fetch('/api/escala/nova', {
@@ -488,14 +483,8 @@ async function criarNovaEscala() {
     });
     const d = await res.json();
     if (d.sucesso && d.escala) {
-      escalaAtualId = d.escala.id;
-      // Limpa os campos de cadastro
-      document.getElementById('nova_titulo').value = '';
-      document.getElementById('nova_data').value = '';
-      document.getElementById('nova_local').value = '';
-      
-      await carregarListaEscalas();
       alert('✅ Nova escala criada com sucesso!');
+      await carregarListaEscalas();
     } else {
       alert('Erro ao criar nova escala.');
     }
@@ -504,21 +493,7 @@ async function criarNovaEscala() {
   }
 }
 
-async function criarEscalaInicialAutomatica() {
-  try {
-    const res = await fetch('/api/escala/nova', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titulo: 'Culto Principal', dataExibicao: new Date().toISOString().split('T')[0], local: 'Templo' })
-    });
-    const d = await res.json();
-    if (d.sucesso && d.escala) {
-      escalaAtualId = d.escala.id;
-      await carregarListaEscalas();
-    }
-  } catch (err) {}
-}
-
+// APENAS O LÍDER PODE SALVAR ALTERAÇÕES GERAIS DA ESCALA
 async function salvarEscalaAtual() {
   if (perfil !== 'lider') { alert('Apenas o líder pode salvar a escala!'); return; }
   if (!escalaAtualId) return;
