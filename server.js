@@ -242,6 +242,23 @@ app.patch('/api/escala/:id/status', async (req, res) => {
   }
 });
 
+// EXCLUIR ESCALA (NOVA ROTA ADICIONADA)
+app.delete('/api/escala/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('escala')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.json({ sucesso: true });
+  } catch (erro) {
+    console.log('❌ Erro ao excluir escala:', erro);
+    res.json({ sucesso: false, mensagem: 'Erro ao excluir no banco' });
+  }
+});
+
 // ==============================================
 // EQUIPE — NÃO MEXI NADA! CONTINUA IGUAL ✅
 // ==============================================
